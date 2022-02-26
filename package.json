@@ -1,0 +1,27 @@
+{
+  "name": "e-remittance-app",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "DEBUG=e-remittance-app:* nodemon ./bin/www",
+    "migrate": "npx knex migrate:latest",
+    "unmigrate": "npx knex migrate:rollback",
+    "seed": "npx knex seed:run",
+    "migrate:make": "npx knex migrate:make",
+    "seed:make": "npx knex seed:make"
+  },
+  "dependencies": {
+    "cookie-parser": "~1.4.4",
+    "debug": "~2.6.9",
+    "dotenv": "^15.0.0",
+    "express": "~4.16.1",
+    "http-errors": "~1.6.3",
+    "jade": "^0.29.0",
+    "knex": "^1.0.1",
+    "morgan": "~1.9.1",
+    "node-pg-migrate": "^6.2.1",
+    "nodemon": "^2.0.15",
+    "pg": "^8.7.1"
+ }
+}
