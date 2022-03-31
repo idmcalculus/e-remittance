@@ -1,4 +1,5 @@
-import { onUpdateTrigger } from "../../knexfile.js";
+import knexConfig from "../../knexfile.js";
+const { onUpdateTrigger } = knexConfig;
 /**
  * @param { import("knex").Knex } knex
  * @returns { Promise<void> }
