@@ -3,7 +3,7 @@ import db from '../services/db.js';
 // list all users
 const getAttendance = async (_req, res, _next) => {
 	try {
-		const attendance = await db('reports_attendance')
+		const attendance = await db('reports_att')
 		return res.status(200).json({
 			status: 'success',
 			data: attendance
@@ -16,7 +16,7 @@ const getAttendance = async (_req, res, _next) => {
 const getAttendanceById = async (req, res, _next) => {
 	try {
 		const { id } = req.params;
-		const attendance = await db('reports_attendance').where({ id }).first();
+		const attendance = await db('reports_att').where({ id }).first();
 
 		if (attendance) {
 			return res.status(200).json({
@@ -26,7 +26,7 @@ const getAttendanceById = async (req, res, _next) => {
 		} else {
 			return res.status(404).json({
 				status: 'fail',
-				message: 'No attendance found'
+				message: 'No attendance found for the id supplied'
 			});
 		}
 	} catch (error) {
@@ -34,81 +34,117 @@ const getAttendanceById = async (req, res, _next) => {
 	}
 }
 
+const getAttendanceByServiceDate = async (req, res, _next) => {
+	try {
+		const { service_date } = req.params;
+		const data = await db('reports_att').where({ service_date });
+
+		if (data.length > 0) {
+			return res.status(200).json({
+				status: 'success',
+				data: data
+			});
+		} else {
+			return res.status(404).json({
+				status: 'fail',
+				message: 'No attendance found for the service date supplied'
+			});
+		}
+	} catch (error) {
+		return error
+	}
+}
+
+const getDataByCode = async (obj, table, res) => {
+	try {
+		const data = await db(table).where(obj);
+		if (data.length > 0) {
+			return res.status(200).json({
+				status: 'success',
+				data: data
+			});
+		} else {
+			return res.status(404).json({
+				status: 'fail',
+				message: 'No data found for the code supplied'
+			});
+		}
+	} catch (error) {
+		return error
+	}
+}
+
+const getAttendanceByParishCode = async (req, res, _next) => await getDataByCode({ parish_code: req.params.parish_code }, 'reports_att', res);
+const getAttendanceByAreaCode = async (req, res, _next) => await getDataByCode({ area_code: req.params.area_code }, 'reports_att', res);
+const getAttendanceByZoneCode = async (req, res, _next) => await getDataByCode({ zone_code: req.params.zone_code }, 'reports_att', res);
+const getAttendanceByProvinceCode = async (req, res, _next) => await getDataByCode({ province_code: req.params.province_code }, 'reports_att', res);
+const getAttendanceByRegionCode = async (req, res, _next) => await getDataByCode({ region_code: req.params.region_code }, 'reports_att', res);
+
 const createAttendance = async (req, res, _next) => {
 	try {
 		const data = req.body;
+		const { service_id, parish_code, area_code, zone_code, province_code, region_code, service_date, week, month, year } = data;
+		let parish_code_check 	= parish_code != '' && parish_code != null;
+		let area_code_check 	= area_code != '' && area_code != null;
+		let zone_code_check 	= zone_code != '' && zone_code != null;
+		let province_code_check = province_code != '' && province_code != null;
+		let region_code_check 	= region_code != '' && region_code != null;
 
-		if (data.parish_code != '') {
+		if (parish_code_check && area_code_check && zone_code_check && province_code_check && region_code_check) {
 
-			const check_key_exists = key => {
-				return data.hasOwnProperty(key);
-			}
-
-			const compute_totals = (m, w, c) => {
-				if (check_key_exists(m) && check_key_exists(w) && check_key_exists(c)) {
-					if (data[m] != '' && data[w] != '' && data[c] != '') {
-						return parseInt(data[m]) + parseInt(data[w]) + parseInt(data[c]);
-					} else {
-						return 0;
-					}
-				} else {
-					return 0;
-				}
-			}
-
-			const compute_average = (...args) => {
-				let total = 0;
-				let length = 0;
-
-				for (let arg of args) {
-					if (check_key_exists(arg)) {
-						if (data[arg] != '') {
-							total += parseInt(data[arg]);
-							length += 1;
-						} else {
-							total += 0;
-							length += 0;
-						}
-					} else {
-						total += 0;
-						length += 0;
-					}
-				};
-
-				return Math.round(total / length);
-			}
-
-			data.sun_tot_wk1 = compute_totals('sun_m_wk1', 'sun_w_wk1', 'sun_c_wk1');
-			data.sun_tot_wk2 = compute_totals('sun_m_wk2', 'sun_w_wk2', 'sun_c_wk2');
-			data.sun_tot_wk3 = compute_totals('sun_m_wk3', 'sun_w_wk3', 'sun_c_wk3');
-			data.sun_tot_wk4 = compute_totals('sun_m_wk4', 'sun_w_wk4', 'sun_c_wk4');
-			data.sun_tot_wk5 = compute_totals('sun_m_wk5', 'sun_w_wk5', 'sun_c_wk5');
-			data.tue_tot_wk1 = compute_totals('tue_m_wk1', 'tue_w_wk1', 'tue_c_wk1');
-			data.tue_tot_wk2 = compute_totals('tue_m_wk2', 'tue_w_wk2', 'tue_c_wk2');
-			data.tue_tot_wk3 = compute_totals('tue_m_wk3', 'tue_w_wk3', 'tue_c_wk3');
-			data.tue_tot_wk4 = compute_totals('tue_m_wk4', 'tue_w_wk4', 'tue_c_wk4');
-			data.tue_tot_wk5 = compute_totals('tue_m_wk5', 'tue_w_wk5', 'tue_c_wk5');
-			data.thur_tot_wk1 = compute_totals('thur_m_wk1', 'thur_w_wk1', 'thur_c_wk1');
-			data.thur_tot_wk2 = compute_totals('thur_m_wk2', 'thur_w_wk2', 'thur_c_wk2');
-			data.thur_tot_wk3 = compute_totals('thur_m_wk3', 'thur_w_wk3', 'thur_c_wk3');
-			data.thur_tot_wk4 = compute_totals('thur_m_wk4', 'thur_w_wk4', 'thur_c_wk4');
-			data.thur_tot_wk5 = compute_totals('thur_m_wk5', 'thur_w_wk5', 'thur_c_wk5');
-
-			data.avg_men = compute_average('sun_m_wk1', 'sun_m_wk2', 'sun_m_wk3', 'sun_m_wk4', 'sun_m_wk5');
-			data.avg_women = compute_average('sun_w_wk1', 'sun_w_wk2', 'sun_w_wk3', 'sun_w_wk4', 'sun_w_wk5');
-			data.avg_children = compute_average('sun_c_wk1', 'sun_c_wk2', 'sun_c_wk3', 'sun_c_wk4', 'sun_c_wk5');
-			data.avg_total = compute_average('sun_tot_wk1', 'sun_tot_wk2', 'sun_tot_wk3', 'sun_tot_wk4', 'sun_tot_wk5');
-			data.avg_ss = compute_average('sun_ss_wk1', 'sun_ss_wk2', 'sun_ss_wk3', 'sun_ss_wk4', 'sun_ss_wk5');
-			data.avg_hf = compute_average('sun_hf_wk1', 'sun_hf_wk2', 'sun_hf_wk3', 'sun_hf_wk4', 'sun_hf_wk5');
-			data.avg_tue = compute_average('tue_tot_wk1', 'tue_tot_wk2', 'tue_tot_wk3', 'tue_tot_wk4', 'tue_tot_wk5');
-			data.avg_thur = compute_average('thur_tot_wk1', 'thur_tot_wk2', 'thur_tot_wk3', 'thur_tot_wk4', 'thur_tot_wk5');
-
-			const result = await db('reports_attendance').insert(data).returning(['id', 'created_at', 'updated_at']);
+			const attendance = await db('reports_att').where({ service_id, parish_code, service_date, week, month, year });
 			
-			return res.status(200).json({
-				status: 'success',
-				data: result[0]
-			});
+			// if attendance exists, update
+			if (attendance.length > 0) {
+				const update_attendance = await db('reports_att').where({ id: attendance[0].id }).update(data).returning(['id', 'parish_code', 'service_id', 'month', 'created_at', 'updated_at']);
+
+				const averages = await db('reports_att').avg({
+					men: 'men', 
+					women: 'women',
+					children: 'children'
+				}).where({
+					service_id: update_attendance[0].service_id,
+					parish_code: update_attendance[0].parish_code,
+					month: update_attendance[0].month
+				}).groupBy('month');
+
+				await db('reports_att').where({ id: update_attendance[0].id }).update({
+					avg_men: Math.round(Number(averages[0].men)),
+					avg_women: Math.round(Number(averages[0].women)),
+					avg_children: Math.round(Number(averages[0].children))
+				});
+
+				return res.status(200).json({
+					status: 'success',
+					message: 'Attendance updated successfully',
+					data: update_attendance
+				});
+			} else {
+				// if attendance does not exist, create
+				const create_attendance = await db('reports_att').insert(data).returning(['id', 'parish_code', 'service_id', 'month', 'created_at', 'updated_at']);
+
+				const averages = await db('reports_att').avg({
+					men: 'men', 
+					women: 'women',
+					children: 'children'
+				}).where({
+					service_id: create_attendance[0].service_id,
+					parish_code: create_attendance[0].parish_code,
+					month: create_attendance[0].month
+				}).groupBy('month');
+
+				await db('reports_att').where({ id: create_attendance[0].id }).update({
+					avg_men: Math.round(Number(averages[0].men)),
+					avg_women: Math.round(Number(averages[0].women)),
+					avg_children: Math.round(Number(averages[0].children))
+				});
+
+				return res.status(200).json({
+					status: 'success',
+					message: 'Attendance created successfully',
+					data: create_attendance
+				});
+			}
 		} else {
 			return res.status(401).json({
 				status: 'error',
@@ -120,4 +156,37 @@ const createAttendance = async (req, res, _next) => {
 	}
 }
 
-export { getAttendance, getAttendanceById, createAttendance };
+const updateAttendance = async (req, res, _next) => {
+	try {
+		const data = req.body;
+		const { id } = req.params;
+		const attendance = await db('reports_att').where({ id }).update(data).returning(['id', 'service_id', 'month', 'created_at', 'updated_at']);
+
+		if (attendance) {
+			return res.status(200).json({
+				status: 'success',
+				message: 'Attendance updated successfully',
+				data: attendance
+			});
+		} else {
+			return res.status(404).json({
+				status: 'fail',
+				message: 'No attendance found for the id supplied'
+			});
+		}
+	} catch (error) {
+		return error
+	}
+}
+
+export { 
+	getAttendance,
+	getAttendanceById,
+	getAttendanceByParishCode,
+	getAttendanceByAreaCode,
+	getAttendanceByZoneCode,
+	getAttendanceByProvinceCode,
+	getAttendanceByRegionCode,
+	getAttendanceByServiceDate,
+	createAttendance 
+};

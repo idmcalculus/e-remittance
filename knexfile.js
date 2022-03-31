@@ -51,18 +51,23 @@ const staging = {
 
 const production = {
   client: 'postgresql',
-  connection: {
-    database: 'my_db',
-    user: 'username',
-    password: 'password'
-  },
+  connection: process.env.DATABASE_URL,
   pool: {
     min: 2,
     max: 10
   },
   migrations: {
-    tableName: 'knex_migrations'
+    tableName: 'knex_migrations',
+    directory: `${__dirname}/db/migrations`
   }
 };
 
-export { development, staging, production };
+const onUpdateTrigger = (table) => `
+    CREATE TRIGGER ${table}_updated_at
+    BEFORE UPDATE ON ${table}
+    FOR EACH ROW
+    WHEN (OLD.* IS DISTINCT FROM NEW.*)
+    EXECUTE PROCEDURE on_update_timestamp();
+  `
+const knexConfig = { development, staging, production, onUpdateTrigger };
+export default knexConfig;

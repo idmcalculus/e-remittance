@@ -1,5 +1,9 @@
-import { development } from '../knexfile.js';
-
+import knexConfig from '../knexfile.js';
 import knex from 'knex';
+import { config } from 'dotenv';
 
-export default knex(development);
+config();
+
+const environment = process.env.DB_ENV || 'development';
+
+export default knex(knexConfig[environment]);

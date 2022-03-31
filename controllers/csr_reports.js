@@ -33,18 +33,11 @@ const getCsrReportById = async (req, res, _next) => {
 const createCsrReport = async (req, res, _next) => {
 	try {
 		const data = req.body;
-		if (data.parish_code == '') {
-			return res.status(401).json({
-				status: 'error',
-				message: 'Please provide the required credentials'
-			})
-		} else {
-			const result = await db('csr_reports').insert(data);
-			return res.status(200).json({
-				status: 'success',
-				data: result
-			});
-		}
+		const result = await db('csr_reports').insert(data).returning(['id', 'parish_code', 'month', 'created_at', 'updated_at']);
+		return res.status(200).json({
+			status: 'success',
+			data: result
+		});
 	} catch (error) {
 		return res.json({ error });
 	}
