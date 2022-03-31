@@ -61,6 +61,7 @@ const production = {
     directory: `${__dirname}/db/migrations`
   }
 };
+console.log(production.connection);
 
 const onUpdateTrigger = (table) => `
     CREATE TRIGGER ${table}_updated_at
