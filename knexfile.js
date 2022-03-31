@@ -52,6 +52,7 @@ const staging = {
 const production = {
   client: 'postgresql',
   connection: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
   pool: {
     min: 2,
     max: 10
@@ -61,7 +62,6 @@ const production = {
     directory: `${__dirname}/db/migrations`
   }
 };
-console.log(production.connection);
 
 const onUpdateTrigger = (table) => `
     CREATE TRIGGER ${table}_updated_at
