@@ -1,0 +1,199 @@
+GET http://localhost:3100/attendance
+
+###
+GET http://localhost:3100/attendance/1
+
+###
+GET http://localhost:3100/attendance/parish/715701
+
+###
+GET http://localhost:3100/attendance/area/AR200000000
+
+###
+GET http://localhost:3100/attendance/zone/ZN200000000
+
+###
+GET http://localhost:3100/attendance/province/LP04
+
+###
+GET http://localhost:3100/attendance/region/R20
+
+###
+GET http://localhost:3100/attendance/date/2022-03-01
+
+###
+POST http://localhost:3100/attendance
+Content-Type: application/json
+
+{
+	"service_id": 1,
+	"parish_code": "715701",
+	"area_code": "AR300000000",
+	"zone_code": "ZN300000000",
+	"province_code": "AB34",
+	"region_code": "R01",
+	"service_date": "2022-03-01",
+	"week": "Week 1",
+	"month": "March",
+	"year": 2022,
+	"men": 19,
+	"women": 23,
+	"children": 35
+}
+
+###
+GET http://localhost:3100/csr_reports
+
+###
+GET http://localhost:3100/csr_reports/1
+
+###
+POST http://localhost:3100/csr_reports
+Content-Type: application/json
+
+{
+	"parish_code": "RCCGR1254000013",
+	"month": "January",
+	"year": "2022",
+	"project": "feeding",
+	"quantity": 100,
+	"address": "RCCG TOD, Abuja",
+	"lga": "Bwari",
+	"city": "Kubwa",
+	"state": "Abuja",
+	"country": "Nigeria",
+	"csr_offering": 1000.00
+}
+
+###
+GET http://localhost:3100/services
+
+###
+GET http://localhost:3100/services/1
+
+###
+POST http://localhost:3100/services
+Content-Type: application/json
+
+[
+	{
+	"service_name": "Sunday Service"
+	},
+	{
+	"service_name": "Sunday School"
+	},
+	{
+	"service_name": "House Fellowship"
+	},
+	{
+	"service_name": "Tuesday Service"
+	},
+	{
+	"service_name": "Thursday Service"
+	}
+]
+
+###
+GET http://localhost:3100/directories/regions
+
+###
+GET http://localhost:3100/directories/regions/1
+
+###
+POST http://localhost:3100/directories/regions
+Content-Type: application/json
+
+{
+	"region": "Region 1",
+	"alias": "R1",
+	"region_code": "RCCGR1254000013",
+	"address": "RCCG TOD, Abuja",
+	"city": "Kubwa",
+	"country": "Nigeria",
+	"phone_no": "08031234567",
+	"email": "region1@rccg.com"
+}
+
+###
+GET http://localhost:3100/directories/provinces
+
+###
+GET http://localhost:3100/directories/provinces/1
+
+###
+POST http://localhost:3100/directories/provinces
+Content-Type: application/json
+
+{
+	"province": "Abuja Province 1",
+	"alias": "AP1",
+	"province_code": "RCCGP1254000013",
+	"address": "RCCG TOD, Abuja",
+	"city": "Kubwa",
+	"country": "Nigeria",
+	"phone_no": "08031234567",
+	"email": "abujaprovince1@rccg.com"
+}
+
+###
+GET http://localhost:3100/directories/zones
+
+###
+GET http://localhost:3100/directories/zones/1
+
+###
+POST http://localhost:3100/directories/zones
+Content-Type: application/json
+
+{
+	"zone": "Jesus House Zone",
+	"alias": "Zone 1",
+	"zone_code": "RCCGZ1254000013",
+	"address": "RCCG TOD, Abuja",
+	"city": "Kubwa",
+	"country": "Nigeria",
+	"phone_no": "08031234567",
+	"email": "abujaprovince1@rccg.com"
+}
+
+###
+GET http://localhost:3100/directories/areas
+
+###
+GET http://localhost:3100/directories/areas/1
+
+###
+POST http://localhost:3100/directories/areas
+Content-Type: application/json
+
+{
+	"area": "Abuja Province 1",
+	"alias": "AP1",
+	"province_code": "RCCGP1254000013",
+	"address": "RCCG TOD, Abuja",
+	"city": "Kubwa",
+	"country": "Nigeria",
+	"phone_no": "08031234567",
+	"email": "abujaprovince1@rccg.com"
+}
+
+###
+GET http://localhost:3100/directories/parishes
+
+###
+GET http://localhost:3100/directories/parishes/1
+
+###
+POST http://localhost:3100/directories/parishes
+Content-Type: application/json
+
+{
+	"parish_name": "RCCG Throne of David",
+	"alias": "RCCGTOD",
+	"parish_code": "RCCGP1254000017",
+	"address": "RCCG TOD, Abuja",
+	"city": "Kubwa",
+	"country": "Nigeria",
+	"phone_no": "08031234567",
+	"email": "abujaprovince1@rccg.com"
+}
