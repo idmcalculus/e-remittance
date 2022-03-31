@@ -58,7 +58,7 @@ const production = {
   },
   migrations: {
     tableName: 'knex_migrations',
-    directory: `./db/migrations`
+    directory: `/db/migrations`
   }
 };
 
