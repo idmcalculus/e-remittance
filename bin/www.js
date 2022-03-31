@@ -7,6 +7,9 @@
 import app from '../app.js';
 import debug from 'debug';
 import { createServer } from 'http';
+import { config } from 'dotenv';
+
+config();
 
 /**
  * Get port from environment and store in Express.
@@ -25,7 +28,7 @@ var server = createServer(app);
  * Listen on provided port, on all network interfaces.
  */
 
-server.listen(3100);
+server.listen(port);
 server.on('error', onError);
 server.on('listening', onListening);
 

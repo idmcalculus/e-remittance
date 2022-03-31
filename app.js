@@ -18,6 +18,10 @@ var app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// view engine setup
+app.set('views', join(__dirname, 'views'));
+app.set('view engine', 'jade');
+
 app.use(logger('dev'));
 app.use(json());
 app.use(urlencoded({ extended: false }));
@@ -36,10 +40,6 @@ app.use('/csr_sub_categories', csrSubCategoryRouter);
 app.use(function(req, res, next) {
   next(createError(404));
 });
-
-// view engine setup
-app.set('views', join(__dirname, 'views'));
-app.set('view engine', 'jade');
 
 // error handler
 app.use(function(err, req, res, next) {
