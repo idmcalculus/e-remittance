@@ -33,12 +33,12 @@ Content-Type: application/json
 	"province_code": "AB34",
 	"region_code": "R01",
 	"service_date": "2022-03-01",
-	"week": "Week 1",
+	"week": "Week 3",
 	"month": "March",
 	"year": 2022,
-	"men": 19,
-	"women": 23,
-	"children": 35
+	"men": 20,
+	"women": 25,
+	"children": 41
 }
 
 ###
@@ -51,19 +51,195 @@ GET http://localhost:3100/csr_reports/1
 POST http://localhost:3100/csr_reports
 Content-Type: application/json
 
-{
-	"parish_code": "RCCGR1254000013",
-	"month": "January",
-	"year": "2022",
-	"project": "feeding",
-	"quantity": 100,
-	"address": "RCCG TOD, Abuja",
-	"lga": "Bwari",
-	"city": "Kubwa",
-	"state": "Abuja",
-	"country": "Nigeria",
-	"csr_offering": 1000.00
-}
+[
+	{
+		"parish_code": "715701",
+		"area_code": "AR23300011",
+		"month": "January",
+		"year": 2022,
+		"description": "None",
+		"address": "Ibadan",
+		"state": "111",
+		"country": "NG",
+		"csr_offering": 50000.00,
+		"category_id": 5,
+		"sub_category_id": 11,
+		"date_of_activity": "02/01/2022",
+		"beneficiary": "4000",
+		"souls": "500",
+		"testimonies": "None",
+		"challenges": "None",
+		"recommendations": "None",
+		"comment": "None",
+		"expenditure": 40000.00
+	},
+	{
+		"parish_code": "715701",
+		"area_code": "AR23300011",
+		"month": "January",
+		"year": 2021,
+		"description": "none",
+		"quantity": 1,
+		"address": "camp",
+		"lga": "Obafemi/owode",
+		"state": "25",
+		"country": "NG",
+		"csr_offering": 35000.00,
+		"category_id": 5,
+		"sub_category_id": 15,
+		"date_of_activity": "03/13/2021",
+		"beneficiary": "34",
+		"souls": "23",
+		"testimonies": "none",
+		"challenges": "none",
+		"recommendations": "none",
+		"comment": "none",
+		"expenditure": 23000.00,
+		"posted_by": "John Doe",
+		"posted_by_name": "John Doe"
+	},
+	{
+		"parish_code": "715701",
+		"month": "March",
+		"year": 2021,
+		"description": "Building",
+		"quantity": 2,
+		"lga": "Numna",
+		"state": "2",
+		"country": "NG",
+		"csr_offering": 10000.00,
+		"category_id": 3,
+		"sub_category_id": 31,
+		"date_of_activity": "06/12/2021",
+		"beneficiary": "500",
+		"souls": "10",
+		"expenditure": 700000.00,
+		"posted_by": "John Doe",
+		"posted_by_name": "John Doe"
+	},
+	{
+		"parish_code": "715701",
+		"area_code": "AR99926708",
+		"month": "March",
+		"year": 2021,
+		"description": "Building",
+		"quantity": 2,
+		"state": "2",
+		"country": "NG",
+		"csr_offering": 10000.00,
+		"category_id": 3,
+		"sub_category_id": 31,
+		"date_of_activity": "06/12/2021",
+		"beneficiary": "500",
+		"souls": "10",
+		"expenditure": 700000.00,
+		"posted_by": "John Doe",
+		"posted_by_name": "John Doe"
+	},
+	{
+		"parish_code": "715701",
+		"area_code": "AR99926708",
+		"month": "March",
+		"year": 2021,
+		"description": "Building",
+		"quantity": 2,
+		"state": "2",
+		"country": "NG",
+		"csr_offering": 10000.00,
+		"category_id": 3,
+		"sub_category_id": 31,
+		"date_of_activity": "06/12/2021",
+		"beneficiary": "500",
+		"souls": "10",
+		"expenditure": 700000.00,
+		"posted_by": "John Doe",
+		"posted_by_name": "John Doe"
+	},
+	{
+		"parish_code": "715701",
+		"area_code": "AR23300007",
+		"month": "March",
+		"year": 2021,
+		"description": "school",
+		"quantity": 45,
+		"address": "camp",
+		"lga": "Esan south east",
+		"state": "11",
+		"country": "NG",
+		"csr_offering": 4000.00,
+		"category_id": 3,
+		"sub_category_id": 31,
+		"date_of_activity": "06/04/2021",
+		"beneficiary": "4",
+		"souls": "56",
+		"expenditure": 50000.00,
+		"posted_by": "John Doe",
+		"posted_by_name": "John Doe"
+	},
+	{
+		"parish_code": "715701",
+		"area_code": "AR23300007",
+		"month": "March",
+		"year": 2021,
+		"description": "school",
+		"quantity": 45,
+		"address": "camp",
+		"lga": "Esan south east",
+		"state": "11",
+		"country": "NG",
+		"csr_offering": 4000.00,
+		"category_id": 3,
+		"sub_category_id": 31,
+		"date_of_activity": "06/04/2021",
+		"beneficiary": "4",
+		"souls": "56",
+		"expenditure": 50000.00,
+		"posted_by": "John Doe",
+		"posted_by_name": "John Doe"
+	},
+	{
+		"parish_code": "715701",
+		"area_code": "AR23300007",
+		"month": "March",
+		"year": 2021,
+		"description": "school",
+		"quantity": 45,
+		"address": "camp",
+		"lga": "Esan south east",
+		"state": "11",
+		"country": "NG",
+		"csr_offering": 4000.00,
+		"category_id": 3,
+		"sub_category_id": 31,
+		"date_of_activity": "06/04/2021",
+		"beneficiary": "4",
+		"souls": "56",
+		"expenditure": 50000.00,
+		"posted_by": "John Doe",
+		"posted_by_name": "John Doe"
+	},
+	{
+		"parish_code": "715701",
+		"area_code": "AR23300007",
+		"month": "March",
+		"year": 2021,
+		"description": "school",
+		"quantity": 45,
+		"address": "camp",
+		"lga": "Esan south east",
+		"state": "11",
+		"country": "NG",
+		"csr_offering": 4000.00,
+		"category_id": 3,
+		"sub_category_id": 31,
+		"date_of_activity": "06/04/2021",
+		"beneficiary": "4",
+		"souls": "56",
+		"expenditure": 50000.00,
+		"posted_by": "John Doe",
+		"posted_by_name": "John Doe"
+	}
+]
 
 ###
 GET http://localhost:3100/services
@@ -90,6 +266,304 @@ Content-Type: application/json
 	},
 	{
 	"service_name": "Thursday Service"
+	}
+]
+
+###
+GET http://localhost:3100/csr_categories
+
+###
+GET http://localhost:3100/csr_categories/8
+
+###
+POST http://localhost:3100/csr_categories
+Content-Type: application/json
+
+[
+	{
+		"cat_name": "ARTS CULTURE AND  ENTERTAINMENT",
+		"status": "1"
+	},
+	{
+		"cat_name": "BUSINESS AND THE ECONOMY",
+		"status": "1"
+	},
+	{
+		"cat_name": "EDUCATION",
+		"status": "1"
+	},
+	{
+		"cat_name": "GOVERNANCE AND  POLITICS",
+		"status": "1"
+	},
+	{
+		"cat_name": "HEALTH",
+		"status": "1"
+	},
+	{
+		"cat_name": "MEDIA AND COMMUNICATION",
+		"status": "1"
+	},
+	{
+		"cat_name": "SOCIAL",
+		"status": "1"
+	},
+	{
+		"cat_name": "SPORTS",
+		"status": "1"
+	}
+]
+
+###
+GET http://localhost:3100/csr_sub_categories
+
+###
+GET http://localhost:3100/csr_sub_categories/50
+
+###
+POST http://localhost:3100/csr_sub_categories
+Content-Type: application/json
+
+[
+	{
+		"sub_cat_name": "FEEDING",
+		"category_id": "7"
+	},
+	{
+		"sub_cat_name": "ORPHANAGE OUTREACHES",
+		"category_id": "7"
+	},
+	{
+		"sub_cat_name": "PRISON OUTREACHES",
+		"category_id": "7"
+	},
+	{
+		"sub_cat_name": "CHARITY SHOP CLOTHING, FURNITURE, TOYS - ITS NEW TO ME",
+		"category_id": "7"
+	},
+	{
+		"sub_cat_name": "DRUG REHABILITATION",
+		"category_id": "7"
+	},
+	{
+		"sub_cat_name": "SHELTER FOR ABUSED WOMEN",
+		"category_id": "7"
+	},
+	{
+		"sub_cat_name": "JUVENILE DELIQUENCY",
+		"category_id": "7"
+	},
+	{
+		"sub_cat_name": "ENVIRONMENTAL ARCHITECTURE (STREET LIGHT, TREE PLANTING, STREET CLEANING, BOREHOLES)",
+		"category_id": "7"
+	},
+	{
+		"sub_cat_name": "SOCIAL ENTERPRISE\/ EMPOWERMENT\/ COTTAGE INDUSTRY REVOLUTION",
+		"category_id": "7"
+	},
+	{
+		"sub_cat_name": "DISASTER RELIEF",
+		"category_id": "7"
+	},
+	{
+		"sub_cat_name": "HEALTH AWARENESS PROGRAMS\/ADVOCACY AND  MEDICAL OUTREACH\/LETS GO A-FISHING",
+		"category_id": "5"
+	},
+	{
+		"sub_cat_name": "HEALTH INSTITUTION\/ CLINICS\/MATERNITY",
+		"category_id": "5"
+	},
+	{
+		"sub_cat_name": "DRUG ABUSE REHABILITATION CENTERS",
+		"category_id": "5"
+	},
+	{
+		"sub_cat_name": "HEALTH INTERVENTION AREAS (MEDICAL TOURISM, AMBULANCES, MERCY SHIP)",
+		"category_id": "5"
+	},
+	{
+		"sub_cat_name": "MEDICAL INSURANCE",
+		"category_id": "5"
+	},
+	{
+		"sub_cat_name": "HEALTH MAINTENANCE ORGANIZATIONS (HMO)",
+		"category_id": "5"
+	},
+	{
+		"sub_cat_name": "MEDICAL EQUIPMENT",
+		"category_id": "5"
+	},
+	{
+		"sub_cat_name": "MENTAL HEALTH",
+		"category_id": "5"
+	},
+	{
+		"sub_cat_name": "SPECIALISTS HOSPITALS",
+		"category_id": "5"
+	},
+	{
+		"sub_cat_name": "WATER\/HYGIENE\/SANITATION",
+		"category_id": "5"
+	},
+	{
+		"sub_cat_name": "FACILITIES AND  INFRASTRUCTURE",
+		"category_id": "5"
+	},
+	{
+		"sub_cat_name": "EQUIP-A-SCHOOL",
+		"category_id": "5"
+	},
+	{
+		"sub_cat_name": "RCCG SCHOOLS\/BRIDGING THE EQUIPMENT AND INFRASTRUCTURAL GAPS",
+		"category_id": "3"
+	},
+	{
+		"sub_cat_name": "FORTRESS SCHOOLS",
+		"category_id": "3"
+	},
+	{
+		"sub_cat_name": "BUILD-A-SCHOOL",
+		"category_id": "3"
+	},
+	{
+		"sub_cat_name": "MENTOR-A-SCHOOL",
+		"category_id": "3"
+	},
+	{
+		"sub_cat_name": "ADOPT-A-SCHOOL",
+		"category_id": "3"
+	},
+	{
+		"sub_cat_name": "CRECHE\/NURSERY\/PRIMARY\/SECONDARY SCHOOLS",
+		"category_id": "3"
+	},
+	{
+		"sub_cat_name": "HIGHER INSTITUTION\/POLYTECHNIC\/UNIVERSITY ENDOWMENT\/INFRASTRUCTURAL GAPS",
+		"category_id": "3"
+	},
+	{
+		"sub_cat_name": "VISION 2025 ERADICATION OF ILLITERACY",
+		"category_id": "3"
+	},
+	{
+		"sub_cat_name": "DOMESTIC STAFF EDUCATION",
+		"category_id": "3"
+	},
+	{
+		"sub_cat_name": "ADULT EDUCATION",
+		"category_id": "3"
+	},
+	{
+		"sub_cat_name": "BUSINESS EDUCATION",
+		"category_id": "2"
+	},
+	{
+		"sub_cat_name": "COOPERATIVE SOCIETIES",
+		"category_id": "2"
+	},
+	{
+		"sub_cat_name": "SKILLS ACQUISITION AND TRAINING",
+		"category_id": "2"
+	},
+	{
+		"sub_cat_name": "BUSINESS ADVOCACY",
+		"category_id": "2"
+	},
+	{
+		"sub_cat_name": "EMPOWERMENT PROGRAMMES",
+		"category_id": "2"
+	},
+	{
+		"sub_cat_name": "E-COMMUNICATION HUB (CONTENT DEVELOPMENT AND MANAGEMENT MEDIA)",
+		"category_id": "6"
+	},
+	{
+		"sub_cat_name": "PRINT MEDIA AND  PUBLICATION (MAGAZINES, NEWSPAPER, BULLETINS)",
+		"category_id": "6"
+	},
+	{
+		"sub_cat_name": "WEB\/ONLINE\/SOCIAL MEDIA COMMUNICATION",
+		"category_id": "6"
+	},
+	{
+		"sub_cat_name": "RADIO STATION",
+		"category_id": "6"
+	},
+	{
+		"sub_cat_name": "RELATIONSHIP MANAGEMENT- INTERNAL STAKEHOLDERS",
+		"category_id": "6"
+	},
+	{
+		"sub_cat_name": "RELATIONSHIP MANAGEMENT - EXTERNAL STAKEHOLDERS",
+		"category_id": "6"
+	},
+	{
+		"sub_cat_name": "COMMUNITY RELATION MANAGEMENT",
+		"category_id": "6"
+	},
+	{
+		"sub_cat_name": "REGIONAL TALENT COMPETITION",
+		"category_id": "1"
+	},
+	{
+		"sub_cat_name": "REACH THE MILLENNIALS",
+		"category_id": "1"
+	},
+	{
+		"sub_cat_name": "RECREATIONAL CENTRES",
+		"category_id": "1"
+	},
+	{
+		"sub_cat_name": "ACTIVE TALENT DEVELOPMENT AND  PROMOTION",
+		"category_id": "1"
+	},
+	{
+		"sub_cat_name": "DOCUMENTARIES, DRAMAS, MOVIES, SOAP OPERAS, THEATRES, ETC.",
+		"category_id": "1"
+	},
+	{
+		"sub_cat_name": "GOVERNMENT AND INSTITUTIONAL SERVICES",
+		"category_id": "4"
+	},
+	{
+		"sub_cat_name": "CIVIC EDUCATION AND EMPOWERMENT",
+		"category_id": "4"
+	},
+	{
+		"sub_cat_name": "LEADERSHIP AND GOVERNANCE ACADEMY",
+		"category_id": "4"
+	},
+	{
+		"sub_cat_name": "SEMINARS AND CONFERENCES",
+		"category_id": "4"
+	},
+	{
+		"sub_cat_name": "STRATEGIC ENGAGEMENT WITH GOVERNMENT AND INFLUENCERS",
+		"category_id": "4"
+	},
+	{
+		"sub_cat_name": "SPORTS INFRASTRUCTURE DEVELOPMENT",
+		"category_id": "8"
+	},
+	{
+		"sub_cat_name": "SPORTS ACADEMY - IDENTIFY YOUNG TALENTS FOR FURTHER DEVELOPMENT",
+		"category_id": "8"
+	},
+	{
+		"sub_cat_name": "SPORTS EDUCATION",
+		"category_id": "8"
+	},
+	{
+		"sub_cat_name": "PROFESSIONAL SPORTS CLUBS",
+		"category_id": "8"
+	},
+	{
+		"sub_cat_name": "REGIONAL SPORTS ASSOCIATIONS",
+		"category_id": "8"
+	},
+	{
+		"sub_cat_name": "NEIGHBORHOOD SPORTING CLUBS",
+		"category_id": "8"
 	}
 ]
 
