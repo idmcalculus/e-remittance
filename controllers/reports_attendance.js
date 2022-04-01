@@ -1,36 +1,8 @@
 import db from '../services/db.js';
 import { getAllData } from '../utilities/getAllData.js';
 
-// list all users
+// Get all attendance reports or specific ones based on query parameters
 const getAttendance = async (req, res, _next) => await getAllData(req, 'reports_att', res);
-
-/* const getAttendanceById = async (req, res, _next) => await getDataById({ id: req.params.id }, 'reports_att', res);
-const getAttendanceByParishCode = async (req, res, _next) => await getDataByCode({ parish_code: req.params.parish_code }, 'reports_att', res);
-const getAttendanceByAreaCode = async (req, res, _next) => await getDataByCode({ area_code: req.params.area_code }, 'reports_att', res);
-const getAttendanceByZoneCode = async (req, res, _next) => await getDataByCode({ zone_code: req.params.zone_code }, 'reports_att', res);
-const getAttendanceByProvinceCode = async (req, res, _next) => await getDataByCode({ province_code: req.params.province_code }, 'reports_att', res);
-const getAttendanceByRegionCode = async (req, res, _next) => await getDataByCode({ region_code: req.params.region_code }, 'reports_att', res); */
-
-/* const getAttendanceByServiceDate = async (req, res, _next) => {
-	try {
-		const { service_date } = req.params;
-		const data = await db('reports_att').where({ service_date });
-
-		if (data.length > 0) {
-			return res.status(200).json({
-				status: 'success',
-				data: data
-			});
-		} else {
-			return res.status(404).json({
-				status: 'fail',
-				message: 'No attendance found for the service date supplied'
-			});
-		}
-	} catch (error) {
-		return error
-	}
-} */
 
 const createAttendance = async (req, res, _next) => {
 	try {
@@ -133,12 +105,5 @@ const updateAttendance = async (req, res, _next) => {
 
 export { 
 	getAttendance,
-	/* getAttendanceById,
-	getAttendanceByParishCode,
-	getAttendanceByAreaCode,
-	getAttendanceByZoneCode,
-	getAttendanceByProvinceCode,
-	getAttendanceByRegionCode,
-	getAttendanceByServiceDate, */
 	createAttendance 
 };

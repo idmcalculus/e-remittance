@@ -14,10 +14,19 @@ const getAllData = async (req, table, res) => {
 			week,
 			service_date,
 			month,
-			year
+			year,
+			page,
+			limit,
+			sort,
+			order
 		} = req.query;
 
 		let query = {};
+		let pageNum;
+		let limitNum;
+		let sortBy;
+		let sortOrder;
+
 
 		if (id) query.id = id;
 		if (service_id) query.service_id = service_id;
@@ -30,11 +39,13 @@ const getAllData = async (req, table, res) => {
 		if (service_date) query.service_date = service_date;
 		if (month) query.month = month;
 		if (year) query.year = year;
-
-		console.log(query);
+		if (page) { pageNum = parseInt(page); } else { pageNum = 0; }
+		if (limit) { limitNum = parseInt(limit); } else { limitNum = 10; }
+		if (sort) { sortBy = sort; } else { sortBy = 'id'; }
+		if (order) { sortOrder = order; } else { sortOrder = 'asc'; }
 
 		if (isEmpty(query)) {
-			const data = await db(table);
+			const data = await db(table).limit(limitNum).offset(pageNum * limitNum).orderBy(sortBy, sortOrder);
 			if (data.length > 0) {
 				return res.status(200).json({
 					status: 'success',
@@ -47,7 +58,7 @@ const getAllData = async (req, table, res) => {
 				});
 			}
 		} else {
-			const result = await db(table).where(query);
+			const result = await db(table).where(query).limit(limitNum).offset(pageNum * limitNum).orderBy(sortBy, sortOrder);
 			if (result.length > 0) {
 				return res.status(200).json({
 					status: 'success',
