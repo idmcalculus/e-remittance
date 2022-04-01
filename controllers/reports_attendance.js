@@ -1,18 +1,17 @@
 import db from '../services/db.js';
-import { getDataByCode } from '../utilities/getDataByCode.js';
 import { getAllData } from '../utilities/getAllData.js';
-import { getDataById } from '../utilities/getDataById.js';
 
 // list all users
-const getAttendance = async (_req, res, _next) => await getAllData('reports_att', res);
-const getAttendanceById = async (req, res, _next) => await getDataById({ id: req.params.id }, 'reports_att', res);
+const getAttendance = async (req, res, _next) => await getAllData(req, 'reports_att', res);
+
+/* const getAttendanceById = async (req, res, _next) => await getDataById({ id: req.params.id }, 'reports_att', res);
 const getAttendanceByParishCode = async (req, res, _next) => await getDataByCode({ parish_code: req.params.parish_code }, 'reports_att', res);
 const getAttendanceByAreaCode = async (req, res, _next) => await getDataByCode({ area_code: req.params.area_code }, 'reports_att', res);
 const getAttendanceByZoneCode = async (req, res, _next) => await getDataByCode({ zone_code: req.params.zone_code }, 'reports_att', res);
 const getAttendanceByProvinceCode = async (req, res, _next) => await getDataByCode({ province_code: req.params.province_code }, 'reports_att', res);
-const getAttendanceByRegionCode = async (req, res, _next) => await getDataByCode({ region_code: req.params.region_code }, 'reports_att', res);
+const getAttendanceByRegionCode = async (req, res, _next) => await getDataByCode({ region_code: req.params.region_code }, 'reports_att', res); */
 
-const getAttendanceByServiceDate = async (req, res, _next) => {
+/* const getAttendanceByServiceDate = async (req, res, _next) => {
 	try {
 		const { service_date } = req.params;
 		const data = await db('reports_att').where({ service_date });
@@ -31,7 +30,7 @@ const getAttendanceByServiceDate = async (req, res, _next) => {
 	} catch (error) {
 		return error
 	}
-}
+} */
 
 const createAttendance = async (req, res, _next) => {
 	try {
@@ -134,12 +133,12 @@ const updateAttendance = async (req, res, _next) => {
 
 export { 
 	getAttendance,
-	getAttendanceById,
+	/* getAttendanceById,
 	getAttendanceByParishCode,
 	getAttendanceByAreaCode,
 	getAttendanceByZoneCode,
 	getAttendanceByProvinceCode,
 	getAttendanceByRegionCode,
-	getAttendanceByServiceDate,
+	getAttendanceByServiceDate, */
 	createAttendance 
 };
