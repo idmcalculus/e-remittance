@@ -1,38 +1,16 @@
 import db from '../services/db.js';
+import { getDataByCode } from '../utilities/getDataByCode.js';
+import { getAllData } from '../utilities/getAllData.js';
+import { getDataById } from '../utilities/getDataById.js';
 
 // list all users
-const getAttendance = async (_req, res, _next) => {
-	try {
-		const attendance = await db('reports_att')
-		return res.status(200).json({
-			status: 'success',
-			data: attendance
-		});
-	} catch (error) {
-		return res.json({ error })
-	}
-}
-
-const getAttendanceById = async (req, res, _next) => {
-	try {
-		const { id } = req.params;
-		const attendance = await db('reports_att').where({ id }).first();
-
-		if (attendance) {
-			return res.status(200).json({
-				status: 'success',
-				data: attendance
-			});
-		} else {
-			return res.status(404).json({
-				status: 'fail',
-				message: 'No attendance found for the id supplied'
-			});
-		}
-	} catch (error) {
-		return error
-	}
-}
+const getAttendance = async (_req, res, _next) => await getAllData('reports_att', res);
+const getAttendanceById = async (req, res, _next) => await getDataById({ id: req.params.id }, 'reports_att', res);
+const getAttendanceByParishCode = async (req, res, _next) => await getDataByCode({ parish_code: req.params.parish_code }, 'reports_att', res);
+const getAttendanceByAreaCode = async (req, res, _next) => await getDataByCode({ area_code: req.params.area_code }, 'reports_att', res);
+const getAttendanceByZoneCode = async (req, res, _next) => await getDataByCode({ zone_code: req.params.zone_code }, 'reports_att', res);
+const getAttendanceByProvinceCode = async (req, res, _next) => await getDataByCode({ province_code: req.params.province_code }, 'reports_att', res);
+const getAttendanceByRegionCode = async (req, res, _next) => await getDataByCode({ region_code: req.params.region_code }, 'reports_att', res);
 
 const getAttendanceByServiceDate = async (req, res, _next) => {
 	try {
@@ -54,31 +32,6 @@ const getAttendanceByServiceDate = async (req, res, _next) => {
 		return error
 	}
 }
-
-const getDataByCode = async (obj, table, res) => {
-	try {
-		const data = await db(table).where(obj);
-		if (data.length > 0) {
-			return res.status(200).json({
-				status: 'success',
-				data: data
-			});
-		} else {
-			return res.status(404).json({
-				status: 'fail',
-				message: 'No data found for the code supplied'
-			});
-		}
-	} catch (error) {
-		return error
-	}
-}
-
-const getAttendanceByParishCode = async (req, res, _next) => await getDataByCode({ parish_code: req.params.parish_code }, 'reports_att', res);
-const getAttendanceByAreaCode = async (req, res, _next) => await getDataByCode({ area_code: req.params.area_code }, 'reports_att', res);
-const getAttendanceByZoneCode = async (req, res, _next) => await getDataByCode({ zone_code: req.params.zone_code }, 'reports_att', res);
-const getAttendanceByProvinceCode = async (req, res, _next) => await getDataByCode({ province_code: req.params.province_code }, 'reports_att', res);
-const getAttendanceByRegionCode = async (req, res, _next) => await getDataByCode({ region_code: req.params.region_code }, 'reports_att', res);
 
 const createAttendance = async (req, res, _next) => {
 	try {
@@ -114,7 +67,7 @@ const createAttendance = async (req, res, _next) => {
 					avg_children: Math.round(Number(averages[0].children))
 				});
 
-				return res.status(200).json({
+				return res.status(204).json({
 					status: 'success',
 					message: 'Attendance updated successfully',
 					data: update_attendance
@@ -139,7 +92,7 @@ const createAttendance = async (req, res, _next) => {
 					avg_children: Math.round(Number(averages[0].children))
 				});
 
-				return res.status(200).json({
+				return res.status(201).json({
 					status: 'success',
 					message: 'Attendance created successfully',
 					data: create_attendance

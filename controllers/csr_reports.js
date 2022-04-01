@@ -1,34 +1,15 @@
 import db from '../services/db.js';
+import { getDataByCode } from '../utilities/getDataByCode.js';
+import { getAllData } from '../utilities/getAllData.js';
+import { getDataById } from '../utilities/getDataById.js';
 
-const getCsrReport = async (_req, res, _next) => {
-	try {
-		const report = await db('csr_reports');
-		return res.json(report);
-	} catch (error) {
-		return res.json({ error });
-	}
-}
-
-const getCsrReportById = async (req, res, _next) => {
-	try {
-		const { id } = req.params;
-		const csr_report = await db('csr_reports').where({ id }).first();
-
-		if (csr_report) {
-			return res.status(200).json({
-				status: 'success',
-				data: csr_report
-			});
-		} else {
-			return res.status(404).json({
-				status: 'fail',
-				message: 'No report found'
-			});
-		}
-	} catch (error) {
-		return error
-	}
-}
+const getCsrReport = async (_req, res, _next) => await getAllData('csr_reports', res);
+const getCsrReportById = async (req, res, _next) => await getDataById({ id: req.params.id }, 'csr_reports', res);
+const getCsrReportByParishCode = async (req, res, _next) => await getDataByCode({ parish_code: req.params.parish_code }, 'csr_reports', res);
+const getCsrReportByAreaCode = async (req, res, _next) => await getDataByCode({ area_code: req.params.area_code }, 'csr_reports', res);
+const getCsrReportByZoneCode = async (req, res, _next) => await getDataByCode({ zone_code: req.params.zone_code }, 'csr_reports', res);
+const getCsrReportByProvinceCode = async (req, res, _next) => await getDataByCode({ province_code: req.params.province_code }, 'csr_reports', res);
+const getCsrReportByRegionCode = async (req, res, _next) => await getDataByCode({ region_code: req.params.region_code }, 'csr_reports', res);
 
 const createCsrReport = async (req, res, _next) => {
 	try {
@@ -43,4 +24,13 @@ const createCsrReport = async (req, res, _next) => {
 	}
 }
 
-export { getCsrReport, getCsrReportById, createCsrReport };
+export { 
+	getCsrReport,
+	getCsrReportById,
+	getCsrReportByParishCode,
+	getCsrReportByAreaCode,
+	getCsrReportByZoneCode,
+	getCsrReportByProvinceCode,
+	getCsrReportByRegionCode,
+	createCsrReport 
+};
