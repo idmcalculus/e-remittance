@@ -1,10 +1,11 @@
 import { Router } from 'express';
-import { getCsrCategories, getCsrCategoryById, createCsrCategory } from '../controllers/csr_categories.js';
+import { getCsrCategories, createCsrCategory, updateCsrCategory, deleteCsrCategory } from '../controllers/csr_categories.js';
 
 let router = Router();
 
 router.post('/', createCsrCategory);
 router.get('/', getCsrCategories);
-router.get('/:id', getCsrCategoryById);
+router.put('/', updateCsrCategory);
+router.delete('/', deleteCsrCategory);
 
 export default router;

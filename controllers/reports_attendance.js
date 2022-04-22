@@ -2,7 +2,7 @@ import db from '../services/db.js';
 import { getAllData } from '../utilities/getAllData.js';
 
 // Get all attendance reports or specific ones based on query parameters
-const getAttendance = async (req, res, _next) => await getAllData(req, 'reports_att', res);
+const getAttendance = async (req, res, _next) => await getAllData(req, res, 'reports_att');
 
 const createAttendance = async (req, res, _next) => {
 	try {
@@ -83,8 +83,36 @@ const createAttendance = async (req, res, _next) => {
 const updateAttendance = async (req, res, _next) => {
 	try {
 		const data = req.body;
-		const { id } = req.params;
-		const attendance = await db('reports_att').where({ id }).update(data).returning(['id', 'service_id', 'month', 'created_at', 'updated_at']);
+
+		const {
+			id,
+			service_id,
+			parish_code,
+			area_code,
+			zone_code,
+			province_code,
+			region_code,
+			week,
+			service_date,
+			month,
+			year
+		} = req.query;
+
+		let query = {};
+
+		if (id) query.id = id;
+		if (service_id) query.service_id = service_id;
+		if (parish_code) query.parish_code = parish_code;
+		if (area_code) query.area_code = area_code;
+		if (zone_code) query.zone_code = zone_code;
+		if (province_code) query.province_code = province_code;
+		if (region_code) query.region_code = region_code;
+		if (week) query.week = week;
+		if (service_date) query.service_date = service_date;
+		if (month) query.month = month;
+		if (year) query.year = year;
+
+		const attendance = await db('reports_att').where(query).first().update(data).returning(['id', 'service_id', 'month', 'created_at', 'updated_at']);
 
 		if (attendance) {
 			return res.status(200).json({
@@ -103,7 +131,57 @@ const updateAttendance = async (req, res, _next) => {
 	}
 }
 
+const deleteAttendance = async (req, res, _next) => {
+	try {
+		const {
+			id,
+			service_id,
+			parish_code,
+			area_code,
+			zone_code,
+			province_code,
+			region_code,
+			week,
+			service_date,
+			month,
+			year
+		} = req.query;
+
+		let query = {};
+
+		if (id) query.id = id;
+		if (service_id) query.service_id = service_id;
+		if (parish_code) query.parish_code = parish_code;
+		if (area_code) query.area_code = area_code;
+		if (zone_code) query.zone_code = zone_code;
+		if (province_code) query.province_code = province_code;
+		if (region_code) query.region_code = region_code;
+		if (week) query.week = week;
+		if (service_date) query.service_date = service_date;
+		if (month) query.month = month;
+		if (year) query.year = year;
+
+		const attendance = await db('reports_att').where(query).first().del();
+
+		if (attendance) {
+			return res.status(200).json({
+				status: 'success',
+				message: 'Attendance deleted successfully'
+			});
+		} else {
+			return res.status(404).json({
+				status: 'fail',
+				message: 'No attendance found for the id supplied'
+			});
+		}
+	} catch (error) {
+		return error
+	}
+}
+
 export { 
 	getAttendance,
-	createAttendance 
+	createAttendance,
+	updateAttendance,
+	deleteAttendance
 };

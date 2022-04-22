@@ -1,34 +1,6 @@
 import db from '../services/db.js';
 
-const getServices = async (_req, res, _next) => {
-	try {
-		const service_list = await db('services');
-		return res.json(service_list);
-	} catch (error) {
-		return res.json({ error });
-	}
-}
-
-const getServiceById = async (req, res, _next) => {
-	try {
-		const { id } = req.params;
-		const service = await db('services').where({ id }).first();
-
-		if (service) {
-			return res.status(200).json({
-				status: 'success',
-				data: service
-			});
-		} else {
-			return res.status(404).json({
-				status: 'fail',
-				message: 'No service found'
-			});
-		}
-	} catch (error) {
-		return error
-	}
-}
+const getServices = async (req, res, _next) => await getAllData(req, res, 'services');
 
 const createServices = async (req, res, _next) => {
 	try {
@@ -43,4 +15,67 @@ const createServices = async (req, res, _next) => {
 	}
 }
 
-export { getServices, getServiceById, createServices };
+const updateServices = async (req, res, _next) => {
+	try {
+		const data = req.body;
+
+		const {
+			id,
+			service_name
+		} = req.query;
+
+		let query = {};
+
+		if (id) query.id = id;
+		if (service_name) query.service_name = service_name;
+
+		const result = await db('services').where(query).first().update(data).returning('*');
+
+		if (result) {
+			return res.status(200).json({
+				status: 'success',
+				message: 'Service updated successfully',
+				data: result
+			});
+		} else {
+			return res.status(404).json({
+				status: 'fail',
+				message: 'Service not found'
+			});
+		}
+	} catch (error) {
+		return res.json({ error });
+	}
+}
+
+const deleteServices = async (req, res, _next) => {
+	try {
+		const {
+			id,
+			service_name
+		} = req.query;
+
+		let query = {};
+
+		if (id) query.id = id;
+		if (service_name) query.service_name = service_name;
+
+		const result = await db('services').where(query).first().del().returning('*');
+
+		if (result) {
+			return res.status(200).json({
+				status: 'success',
+				message: 'Service deleted successfully'
+			});
+		} else {
+			return res.status(404).json({
+				status: 'fail',
+				message: 'Service not found'
+			});
+		}
+	} catch (error) {
+		return res.json({ error });
+	}
+}
+
+export { getServices, createServices, updateServices, deleteServices };

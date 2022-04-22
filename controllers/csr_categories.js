@@ -1,34 +1,7 @@
 import db from '../services/db.js';
+import { getAllData } from '../utilities/getAllData.js';
 
-const getCsrCategories = async (_req, res, _next) => {
-	try {
-		const categories = await db('csr_categories');
-		return res.json(categories);
-	} catch (error) {
-		return res.json({ error });
-	}
-}
-
-const getCsrCategoryById = async (req, res, _next) => {
-	try {
-		const { id } = req.params;
-		const csr_category = await db('csr_categories').where({ id }).first();
-
-		if (csr_category) {
-			return res.status(200).json({
-				status: 'success',
-				data: csr_category
-			});
-		} else {
-			return res.status(404).json({
-				status: 'fail',
-				message: 'No category found'
-			});
-		}
-	} catch (error) {
-		return error
-	}
-}
+const getCsrCategories = async (req, res, _next) => await getAllData(req, res, 'csr_categories');
 
 const createCsrCategory = async (req, res, _next) => {
 	try {
@@ -64,4 +37,73 @@ const createCsrCategory = async (req, res, _next) => {
 	}
 }
 
-export { getCsrCategories, getCsrCategoryById, createCsrCategory };
+const updateCsrCategory = async (req, res, _next) => {
+	try {
+		const data = req.body;
+
+		const {
+			id,
+			cat_name
+		} = req.query;
+
+		let query = {};
+
+		if (id) query.id = id;
+		if (cat_name) query.cat_name = cat_name;
+
+		const result = await db('csr_categories').where(query).first().update(data).returning('*');
+
+		if (result) {
+			return res.status(200).json({
+				status: 'success',
+				message: 'CSR category updated successfully',
+				data: result
+			});
+		} else {
+			return res.status(404).json({
+				status: 'fail',
+				message: 'CSR category not found'
+			});
+		}
+	} catch (error) {
+		return res.json({ error });
+	}
+}
+
+const deleteCsrCategory = async (req, res, _next) => {
+	try {
+		const {
+			id,
+			cat_name
+		} = req.query;
+
+		let query = {};
+
+		if (id) query.id = id;
+		if (cat_name) query.cat_name = cat_name;
+
+		const result = await db('csr_categories').where(query).first().del().returning('*');
+
+		if (result) {
+			return res.status(200).json({
+				status: 'success',
+				message: 'CSR category deleted successfully'
+			});
+		} else {
+			return res.status(404).json({
+				status: 'fail',
+				message: 'CSR category not found'
+			});
+		}
+	} catch (error) {
+		return res.json({ error });
+	}
+}
+
+
+export {
+	getCsrCategories,
+	createCsrCategory,
+	updateCsrCategory,
+	deleteCsrCategory
+};

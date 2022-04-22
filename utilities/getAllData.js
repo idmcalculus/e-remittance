@@ -1,7 +1,7 @@
 import db from '../services/db.js';
 import isEmpty from 'lodash/isEmpty.js';
 
-const getAllData = async (req, table, res) => {
+const getAllData = async (req, res, table) => {
 	try {
 		const {
 			id,
