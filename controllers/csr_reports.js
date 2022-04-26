@@ -62,7 +62,7 @@ const updateCsrReport = async (req, res, _next) => {
 		} else {
 			return res.status(404).json({
 				status: 'fail',
-				message: 'No CSR report found for the id supplied'
+				message: 'No CSR report found for the query data supplied'
 			});
 		}
 	} catch (error) {
@@ -70,7 +70,7 @@ const updateCsrReport = async (req, res, _next) => {
 	}
 }
 
-const deleteCSRReport = async (req, res, _next) => {
+const deleteCsrReport = async (req, res, _next) => {
 	try {
 		const {
 			id,
@@ -112,7 +112,7 @@ const deleteCSRReport = async (req, res, _next) => {
 		} else {
 			return res.status(404).json({
 				status: 'fail',
-				message: 'No CSR report found for the id supplied'
+				message: 'No CSR report found for the query data supplied'
 			});
 		}
 	} catch (error) {
@@ -124,5 +124,5 @@ export {
 	getCsrReport, 
 	createCsrReport,
 	updateCsrReport,
-	deleteCSRReport
+	deleteCsrReport
 };

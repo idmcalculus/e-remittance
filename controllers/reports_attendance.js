@@ -123,7 +123,7 @@ const updateAttendance = async (req, res, _next) => {
 		} else {
 			return res.status(404).json({
 				status: 'fail',
-				message: 'No attendance found for the id supplied'
+				message: 'No attendance found for the query data supplied'
 			});
 		}
 	} catch (error) {
@@ -171,7 +171,7 @@ const deleteAttendance = async (req, res, _next) => {
 		} else {
 			return res.status(404).json({
 				status: 'fail',
-				message: 'No attendance found for the id supplied'
+				message: 'No attendance found for the query data supplied'
 			});
 		}
 	} catch (error) {
