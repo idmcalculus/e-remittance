@@ -65,6 +65,8 @@ Content-Type: application/json
 }
 
 ###
+DELETE http://localhost:3100/attendance/?service_id=1&week=Week 1&month=March&year=2022
+###
 GET http://localhost:3100/csr_reports
 
 ###
