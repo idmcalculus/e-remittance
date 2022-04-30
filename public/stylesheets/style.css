@@ -10,5 +10,23 @@ body {
 
 a {
 	text-decoration: none;
-  color: #00B7FF;
+  	color: #00B7FF;
+	margin: 0;
+}
+
+label, .form-group, .records_upload {
+	margin: 0;
+}
+
+label {
+	margin-right: 10px;
+}
+
+.btn-primary {
+	background-color: #00B7FF;
+	border-color: #00B7FF;
+	padding: 8px 16px;
+	margin: 0;
+	margin-top: 10px;
+	border-radius: 10px;
 }

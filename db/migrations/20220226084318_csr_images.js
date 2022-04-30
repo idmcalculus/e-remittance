@@ -17,7 +17,7 @@ const { onUpdateTrigger } = knexConfig;
 		table.string('area_code', 255).nullable();
 		table.string('prov_code', 255).nullable();
 		table.string('reg_code', 255).nullable();
-		table.string('image', 255).nullable();
+		table.binary('image', 255).nullable();
 		table.binary('image_bin').nullable();
 		table.text('img_description').nullable();
 		table.string('type', 255).nullable();

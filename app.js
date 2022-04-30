@@ -12,6 +12,7 @@ import directoryRouter from './routes/directories.js';
 import serviceRouter from './routes/services.js';
 import csrCategoryRouter from './routes/csr_categories.js';
 import csrSubCategoryRouter from './routes/csr_sub_categories.js';
+import csrImagesRouter from './routes/csr_images.js';
 
 var app = express();
 
@@ -35,6 +36,7 @@ app.use('/directories', directoryRouter);
 app.use('/services', serviceRouter);
 app.use('/csr_categories', csrCategoryRouter);
 app.use('/csr_sub_categories', csrSubCategoryRouter);
+app.use('/', csrImagesRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

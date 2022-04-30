@@ -16,11 +16,10 @@ const development = {
   client: 'postgresql',
   connection: {
     host: 'localhost',
-    database: 'e-remittance',
-    user: 'idmcalculus',
-    password: pass,
+    database: 'rccgportal297_remit_3882',
+    user: 'rccgportal297_remit_usr334',
+    password: 'l3CMe}*IhlPT',
   },
-  ssl: false,
   pool: {
     min: 2,
     max: 10
