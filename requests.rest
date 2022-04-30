@@ -1,6 +1,9 @@
 GET http://localhost:3100/attendance/?page=0&limit=10&order=desc
 
 ###
+GET http://svr4242ww2.rccgportal.org:16627/attendance
+
+###
 GET https://e-remittance.herokuapp.com/attendance
 
 ###
@@ -29,19 +32,19 @@ POST http://localhost:3100/attendance
 Content-Type: application/json
 
 {
-	"service_id": 1,
-	"parish_code": "715701",
-	"area_code": "AR300000000",
-	"zone_code": "ZN300000000",
-	"province_code": "AB34",
-	"region_code": "R01",
-	"service_date": "2022-03-01",
-	"week": "Week 3",
-	"month": "March",
-	"year": 2022,
-	"men": 20,
-	"women": 25,
-	"children": 41
+  "service_id": 1,
+  "parish_code": "715701",
+  "area_code": "AR300000000",
+  "zone_code": "ZN300000000",
+  "province_code": "AB34",
+  "region_code": "R01",
+  "service_date": "2016-08-29",
+  "week": "Week 1",
+  "month": "March",
+  "year": 2022,
+  "men": 200,
+  "women": 350,
+  "children": 500
 }
 
 ###
