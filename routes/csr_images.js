@@ -1,20 +1,16 @@
 import { Router } from "express";
-import multer, { diskStorage } from 'multer';
-import { fileUpload } from "../controllers/csr_images.js";
+import { csrImageUpload } from "../middlewares/multer.js";
+import { fileUpload, getCsrFiles } from "../controllers/csr_images.js";
 
-let router = Router();
+const router = Router();
 
-let storage = diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'public/uploads/')
-    },
-    filename: function (req, file, cb) {
-        cb(null, file.originalname)
-  }
-})
- 
-let upload = multer({ storage: storage }).single('recordsupload');
+function renderFileUploadPage (req, res, next) {
+    res.render('files', { 
+        title: 'E-remittance App'
+    });
+}
 
-router.post("/", upload, fileUpload);
+router.post('/', csrImageUpload, fileUpload);
+router.get('/', getCsrFiles);
 
 export default router;

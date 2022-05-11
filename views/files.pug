@@ -1,0 +1,11 @@
+extends layout
+
+block content
+    h1= title
+    form(method='post', enctype='multipart/form-data')
+      .form-group
+        label(for='file') Record:
+        input#file.records_upload(type='file', name='recordsupload' multiple)
+        input(type="text" name="title")
+        input(type="text" name="description")
+      .form-group #[input.btn.btn-primary(type='submit', name='uploadrecords', value='Upload Record(s)')]

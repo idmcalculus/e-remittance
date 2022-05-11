@@ -4,17 +4,19 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import cookieParser from 'cookie-parser';
 import logger from 'morgan';
+import { config } from 'dotenv';
 
 import indexRouter from './routes/index.js';
 import attendanceRouter  from './routes/reports_attendance.js';
 import csrRouter from './routes/csr_reports.js';
-import directoryRouter from './routes/directories.js';
 import serviceRouter from './routes/services.js';
 import csrCategoryRouter from './routes/csr_categories.js';
 import csrSubCategoryRouter from './routes/csr_sub_categories.js';
 import csrImagesRouter from './routes/csr_images.js';
+import adminSettingsRouter from './routes/admin_settings.js';
 
-var app = express();
+config();
+let app = express();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -32,11 +34,11 @@ app.use(express.static(join(__dirname, 'public')));
 app.use('/', indexRouter);
 app.use('/attendance', attendanceRouter);
 app.use('/csr_reports', csrRouter);
-app.use('/directories', directoryRouter);
 app.use('/services', serviceRouter);
 app.use('/csr_categories', csrCategoryRouter);
 app.use('/csr_sub_categories', csrSubCategoryRouter);
-app.use('/', csrImagesRouter);
+app.use('/csr_image', csrImagesRouter);
+app.use('/admin_settings', adminSettingsRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

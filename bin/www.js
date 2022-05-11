@@ -32,6 +32,37 @@ server.listen(port);
 server.on('error', onError);
 server.on('listening', onListening);
 
+process.on('uncaughtException', (error) => {
+  console.error(error);
+  // attempt a gracefully shutdown
+  server.close(() => {
+    process.exit(1);
+  });
+
+  // If a graceful shutdown is not achieved after 1 second,
+  // shut down the process completely
+  setTimeout(() => {
+    process.abort();
+  }, 1000).unref()
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error({
+    message: 'Unhandled promise rejection',
+    params: {
+      promise,
+      reason,
+    },
+  });
+  server.close(() => {
+    process.exit(1);
+  });
+
+  setTimeout(() => {
+    process.abort();
+  }, 1000).unref()
+});
+
 /**
  * Normalize a port into a number, string, or false.
  */

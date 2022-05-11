@@ -1,12 +1,6 @@
 extends layout
 
 block content
-  h1= title
-  h3 Welcome to the RCCG #{title}
-  p Click #[a(target='_blank' href=url) here] for the documentation
-  form(method='post', enctype='multipart/form-data')
-    .form-group
-      label(for='file') Record:
-      input#file.records_upload(type='file', name='recordsupload')
-    .form-group #[input.btn.btn-primary(type='submit', name='uploadrecords', value='Upload Record(s)')]
-    
+    h1= title
+    h3 Welcome to the RCCG #{title}
+    p Click #[a(target='_blank' href=url) here] for the documentation

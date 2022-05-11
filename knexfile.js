@@ -6,19 +6,21 @@
 import { config } from 'dotenv';
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
+import pg from 'pg';
+//import moment from 'moment';
 
 config();
+pg.types.setTypeParser(1082, str => str);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const pass = process.env.DB_PASSWORD;
 
 const development = {
   client: 'postgresql',
   connection: {
-    host: 'localhost',
-    database: 'e-remittance',
-    user: 'idmcalculus',
-    password: pass,
+    host: process.env.DATABASE_HOST,
+    database: process.env.DATABASE_NAME,
+    user: process.env.DATABASE_USERNAME,
+    password: process.env.DATABASE_PASSWORD
   },
   ssl: false,
   pool: {
@@ -68,7 +70,6 @@ const onUpdateTrigger = (table) => `
     CREATE TRIGGER ${table}_updated_at
     BEFORE UPDATE ON ${table}
     FOR EACH ROW
-    WHEN (OLD.* IS DISTINCT FROM NEW.*)
     EXECUTE PROCEDURE on_update_timestamp();
   `
 const knexConfig = { development, staging, production, onUpdateTrigger };

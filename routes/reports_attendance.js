@@ -2,15 +2,20 @@ import { Router } from 'express';
 import { 
 	getAttendance,
 	createAttendance,
-	updateAttendance,
-	deleteAttendance
+	deleteAttendance,
+	getMonthlyAttendance
 } from '../controllers/reports_attendance.js';
+import { sourceDocUpload } from '../middlewares/multer.js';
+import { fileUpload, getSourceDocs } from '../controllers/source_doc.js';
+import { remittanceLocked, scanLocked } from '../middlewares/admin_settings.js';
 
-var router = Router();
+const router = Router();
 
-router.post('/', createAttendance);
+router.post('/', remittanceLocked, createAttendance);
+router.post('/source_doc', scanLocked, sourceDocUpload, fileUpload);
 router.get('/', getAttendance);
-router.put('/', updateAttendance);
+router.get('/monthly_report', getMonthlyAttendance);
+router.get('/source_doc', getSourceDocs);
 router.delete('/', deleteAttendance);
 
 export default router;

@@ -6,7 +6,7 @@ const { onUpdateTrigger } = knexConfig;
  */
  export const up = async knex => {
 	try {
-		return knex.schema.createTable('reports_att', table => {
+		return knex.schema.createTable('reports_att_monthly', table => {
 			table.increments('id').primary();
 			table.integer('service_id')
 				.notNullable()
@@ -20,8 +20,6 @@ const { onUpdateTrigger } = knexConfig;
 			table.string('zone_code', 30).notNullable();
 			table.string('prov_code', 30).notNullable();
 			table.string('reg_code', 30).notNullable();
-			table.date('service_date').notNullable();
-			table.string('week').notNullable();
 			table.enum('month', [
 				'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
 				'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
@@ -31,6 +29,10 @@ const { onUpdateTrigger } = knexConfig;
 			table.integer('women').nullable();
 			table.integer('children').nullable();
 			table.integer('total_mwc').nullable();
+			table.integer('avg_men').nullable();
+			table.integer('avg_women').nullable();
+			table.integer('avg_children').nullable();
+			table.integer('avg_total').nullable();
 			table.integer('marriages').nullable();
 			table.integer('births').nullable();
 			table.integer('demises').nullable();
@@ -46,10 +48,6 @@ const { onUpdateTrigger } = knexConfig;
 			table.integer('asst_pastors').nullable();
 			table.integer('full_pastors').nullable();
 			table.integer('dcns').nullable();
-			table.integer('avg_men').nullable();
-			table.integer('avg_women').nullable();
-			table.integer('avg_children').nullable();
-			table.integer('avg_total').nullable();
 			table.integer('comp').nullable();
 			table.integer('status').nullable();
 			table.string('rem_by', 30).nullable();
@@ -59,8 +57,8 @@ const { onUpdateTrigger } = knexConfig;
 			table.integer('r3').nullable();
 			table.timestamps(false, true);
 			table.timestamp('deleted_at').nullable();
-			table.unique(['service_id', 'parish_code', 'week', 'month', 'year']);
-		}).raw(onUpdateTrigger('reports_att'));
+			table.unique(['service_id', 'parish_code', 'month', 'year']);
+		}).raw(onUpdateTrigger('reports_att_monthly'));
 	} catch (error) {
 		console.error(error);
 	}
@@ -70,4 +68,4 @@ const { onUpdateTrigger } = knexConfig;
  * @param { import("knex").Knex } knex
  * @returns { Promise<void> }
  */
-export const down = knex => knex.schema.dropTable('reports_att');
+export const down = knex => knex.schema.dropTable('reports_att_monthly');

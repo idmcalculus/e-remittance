@@ -9,7 +9,7 @@ const { onUpdateTrigger } = knexConfig;
 	try {
 		return knex.schema.createTable('services', table => {
 			table.increments('id').primary();
-			table.string('service_name', 200).nullable();
+			table.string('service_name', 200).notNullable();
 			table.timestamps(false, true);
 			table.timestamp('deleted_at').nullable();
 		})

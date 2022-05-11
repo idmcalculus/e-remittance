@@ -5,24 +5,32 @@ const { onUpdateTrigger } = knexConfig;
  * @returns { Promise<void> }
  */
  export const up = knex => {
-	return knex.schema.createTable('csr_images', table => {
+	return knex.schema.createTable('source_docs', table => {
 		table.increments('id').primary();
-		table.integer('report_id')
+		table.integer('service_id')
 			.notNullable()
 			.unsigned()
 			.index()
 			.references('id')
-			.inTable('csr_reports')
+			.inTable('services')
 			.onDelete('CASCADE');
+		table.integer('report_att_id')
+			.notNullable()
+			.unsigned()
+			.index()
+			.references('id')
+			.inTable('reports_att')
+			.onDelete('CASCADE');
+		table.string('week', 200).notNullable();
 		table.enum('month', [
 			'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
 			'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
 		]).notNullable();
 		table.integer('year').notNullable();
-		table.date('date_of_activity').notNullable();
+		table.date('service_date').notNullable();
 		table.string('parish_code', 255).notNullable();
 		table.string('area_code', 255).notNullable();
-		table.string('zone_code', 255).notNullable();
+		table.string('zone_code', 30).notNullable();
 		table.string('prov_code', 255).notNullable();
 		table.string('reg_code', 255).notNullable();
 		table.string('description').nullable();
@@ -34,7 +42,7 @@ const { onUpdateTrigger } = knexConfig;
 		table.timestamps(false, true);
 		table.timestamp('deleted_at').nullable();
 	})
-	.raw(onUpdateTrigger('csr_images'));
+	.raw(onUpdateTrigger('source_docs'));
 }
   
-export const down = knex => knex.schema.dropTable('csr_images');
+export const down = knex => knex.schema.dropTable('source_docs');

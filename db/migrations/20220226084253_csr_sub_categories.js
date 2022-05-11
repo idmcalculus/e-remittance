@@ -10,8 +10,12 @@ const { onUpdateTrigger } = knexConfig;
 		table.string('sub_cat_name', 200).notNullable();
 		table.string('status', 200).nullable();
 		table.integer('category_id')
+			.notNullable()
+			.unsigned()
+			.index()
 			.references('id')
-			.inTable('csr_categories');
+			.inTable('csr_categories')
+			.onDelete('CASCADE');
 		table.string('c1', 200).nullable();
 		table.string('c2', 200).nullable();
 		table.string('c3', 200).nullable();

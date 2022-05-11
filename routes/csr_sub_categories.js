@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { getCsrSubCategories, createCsrSubCategory } from '../controllers/csr_sub_categories.js';
 
-let router = Router();
+const router = Router();
 
 router.post('/', createCsrSubCategory);
 router.get('/', getCsrSubCategories);

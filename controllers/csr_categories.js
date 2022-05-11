@@ -1,7 +1,9 @@
 import db from '../services/db.js';
-import { getAllData } from '../utilities/getAllData.js';
+import { getQueryData } from '../utilities/getQueryData.js';
 
-const getCsrCategories = async (req, res, _next) => await getAllData(req, res, 'csr_categories');
+const getCsrCategories = async (req, res, _next) => {
+	getQueryData(req, res, 'csr_categories');
+}
 
 const createCsrCategory = async (req, res, _next) => {
 	try {

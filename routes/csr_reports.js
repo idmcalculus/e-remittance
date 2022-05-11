@@ -2,15 +2,14 @@ import { Router } from 'express';
 import { 
 	getCsrReport,
 	createCsrReport,
-	updateCsrReport,
 	deleteCsrReport
 } from '../controllers/csr_reports.js';
+import { csrLocked } from '../middlewares/admin_settings.js';
 
-let router = Router();
+const router = Router();
 
-router.post('/', createCsrReport);
+router.post('/', csrLocked, createCsrReport);
 router.get('/', getCsrReport);
-router.put('/', updateCsrReport);
 router.delete('/', deleteCsrReport);
 
 export default router;

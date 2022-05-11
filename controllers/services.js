@@ -1,17 +1,51 @@
+import isArray from 'lodash/isArray.js';
 import db from '../services/db.js';
+import { getDataFromDb, insertIntoDb, updateDb } from '../utilities/dbOps.js';
+import { getQueryData } from '../utilities/getQueryData.js';
 
-const getServices = async (req, res, _next) => await getAllData(req, res, 'services');
+const getServices = async (req, res, _next) => {
+	getQueryData(req, res, 'services');
+}
 
 const createServices = async (req, res, _next) => {
 	try {
 		const data = req.body;
-		const result = await db('services').insert(data).returning('*');
-		return res.status(200).json({
-			status: 'success',
-			data: result
-		});
+		/* console.log(data[0].service_name)
+		const service_name = data[0].service_name;
+
+		const foundServiceData = await getDataFromDb(db('services'), { service_name });
+
+		if (foundServiceData) {
+			const updateServicesData = await updateDb(db('services'), data, { service_name });
+
+			if (updateServicesData) {
+				return res.status(200).json({
+					status: 'success',
+					data: updateServicesData
+				});
+			} else {
+				return res.status(400).json({
+					status: 'fail',
+					message: 'Services update unsuccessful'
+				})
+			}
+		} else { */
+			const createServiceData = await insertIntoDb(db('services'), data)
+			if (createServiceData) {
+				return res.status(200).json({
+					status: 'success',
+					data: createServiceData
+				});
+			} else {
+				return res.status(400).json({
+					status: 'fail',
+					message: 'Insert data into services unsuccessful'
+				})
+			}
+	//	}
 	} catch (error) {
-		return res.json({ error });
+		console.error(error);
+		return res.status(400).send(`ERROR: ${error.message}`);
 	}
 }
 

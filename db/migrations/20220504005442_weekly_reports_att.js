@@ -6,7 +6,7 @@ const { onUpdateTrigger } = knexConfig;
  */
  export const up = async knex => {
 	try {
-		return knex.schema.createTable('reports_att', table => {
+		return knex.schema.createTable('reports_att_weekly', table => {
 			table.increments('id').primary();
 			table.integer('service_id')
 				.notNullable()
@@ -31,9 +31,6 @@ const { onUpdateTrigger } = knexConfig;
 			table.integer('women').nullable();
 			table.integer('children').nullable();
 			table.integer('total_mwc').nullable();
-			table.integer('marriages').nullable();
-			table.integer('births').nullable();
-			table.integer('demises').nullable();
 			table.integer('converts').nullable();
 			table.integer('first_timers').nullable();
 			table.integer('hf_centres').nullable();
@@ -60,7 +57,8 @@ const { onUpdateTrigger } = knexConfig;
 			table.timestamps(false, true);
 			table.timestamp('deleted_at').nullable();
 			table.unique(['service_id', 'parish_code', 'week', 'month', 'year']);
-		}).raw(onUpdateTrigger('reports_att'));
+		})
+		.raw(onUpdateTrigger('reports_att_weekly'));
 	} catch (error) {
 		console.error(error);
 	}
@@ -70,4 +68,4 @@ const { onUpdateTrigger } = knexConfig;
  * @param { import("knex").Knex } knex
  * @returns { Promise<void> }
  */
-export const down = knex => knex.schema.dropTable('reports_att');
+export const down = knex => knex.schema.dropTable('reports_att_weekly');
