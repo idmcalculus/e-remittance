@@ -7,10 +7,11 @@ import { config } from 'dotenv';
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
 import pg from 'pg';
-//import moment from 'moment';
 
 config();
+
 pg.types.setTypeParser(1082, str => str);
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 

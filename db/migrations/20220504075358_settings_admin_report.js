@@ -14,16 +14,15 @@ export const up = async knex => {
 			]).notNullable();
 			table.integer('rem_year').notNullable();
 			table.date('date_of_comm').notNullable();
-			table.integer('remittance_comp_deadline').notNullable();
-			table.boolean('lock_remittance').notNullable();
+			table.date('date_of_comp').notNullable();
 			table.boolean('set_as_default').notNullable();
 			table.boolean('report_def').notNullable();
 			table.boolean('scan_def').nullable();
-			table.boolean('scan_lock').nullable();
-			table.integer('scan_deadline').nullable();
+			table.date('scan_comm_date').notNullable();
+			table.date('scan_comp_date').notNullable();
 			table.boolean('csr_def').nullable();
-			table.boolean('csr_lock').nullable();
-			table.integer('csr_deadline').nullable();
+			table.date('csr_comm_date').notNullable();
+			table.date('csr_comp_date').notNullable();
 			table.string('inputted_by', 200).notNullable();
 			table.string('set_by').nullable();
 			table.string('notify').nullable();
@@ -33,10 +32,8 @@ export const up = async knex => {
 			table.string('s3').nullable();
 			table.timestamps(false, true);
 			table.timestamp('deleted_at').nullable();
+			table.unique(['rem_month', 'rem_year']);
 		})
-		.raw(`ALTER TABLE IF EXISTS settings_admin_report ADD COLUMN remittance_deadline_date date GENERATED ALWAYS AS (date_of_comm + remittance_comp_deadline) STORED;`)
-		.raw(`ALTER TABLE IF EXISTS settings_admin_report ADD COLUMN scan_deadline_date date GENERATED ALWAYS AS (date_of_comm + remittance_comp_deadline + scan_deadline) STORED;`)
-		.raw(`ALTER TABLE IF EXISTS settings_admin_report ADD COLUMN csr_deadline_date date GENERATED ALWAYS AS (date_of_comm + remittance_comp_deadline + csr_deadline) STORED;`)
 		.raw(onUpdateTrigger('settings_admin_report'));
 	} catch (error) {
 		console.error(error);

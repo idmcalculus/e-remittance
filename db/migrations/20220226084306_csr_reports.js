@@ -28,6 +28,8 @@ const { onUpdateTrigger } = knexConfig;
 			table.string('zone_code', 30).notNullable();
 			table.string('prov_code', 255).notNullable();
 			table.string('reg_code', 255).notNullable();
+			table.string('sub_cont_code', 255).notNullable();
+			table.string('cont_code', 255).notNullable();
 			table.string('week').notNullable();
 			table.enum('month', [
 				'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
@@ -57,6 +59,7 @@ const { onUpdateTrigger } = knexConfig;
 			table.string('posted_by_name', 255).nullable();
 			table.timestamps(false, true);
 			table.timestamp('deleted_at').nullable();
+			table.unique(['parish_code', 'week', 'month', 'year', 'date_of_activity']);
 		})
 		.raw(onUpdateTrigger('csr_reports'));
 	} catch (error) {

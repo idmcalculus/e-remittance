@@ -1,220 +1,103 @@
 import { config } from 'dotenv';
 import db from '../services/db.js';
 import isEmpty from 'lodash/isEmpty.js';
-import { getQueryData } from '../utilities/getQueryData.js';
-import { insertIntoDb, getDataFromDb, updateDb, deleteFromDb } from '../utilities/dbOps.js';
+import { getQueryData } from '../utils/getQueryData.js';
+import { insertIntoDb, getDataFromDb, updateDb, deleteFromDb } from '../utils/dbOps.js';
+import { asyncCatchInsert, asyncCatchRegular, insertOpsHelper, updateOpsHelper } from '../utils/helpers.js';
 
 config();
 
 // Get all attendance reports or specific ones based on query parameters
-const getAttendance = async (req, res, _next) => {
-	try {
-		const { query_data, pageNum, limitNum, sortBy, sortOrder } = getQueryData(req);
+const getAttendance = asyncCatchRegular(async (req, res, _next) => {
+	const modifyReports = async report => {
+		const source_doc = await getDataFromDb(req, db('source_docs'), { report_att_id: report.id });
 
-		const modifyReports = async report => {
-			const source_doc = await getDataFromDb(db('source_docs'), { report_att_id: report.id });
-			const file_key = source_doc[0].file_key
-			const file_path = `https://${process.env.AWS_BUCKET_NAME}.${process.env.FILE_HOST}/${file_key}`;
+		if (source_doc) {
+			const file_key = source_doc[0]['file_key']
+			const file_path = `${process.env.AWS_BUCKET_URL}/${file_key}`;
 			source_doc[0]['file_path'] = file_path;
-			report.source_doc = source_doc;
-			return report;
+			report['source_doc'] = source_doc;
 		}
 
-		const dataFound = async (data) => {
-			if (data.length > 0) {
-				const addFilesToReport = data.map(modifyReports);
+		return report;
+	}
 
-				const attReports = await Promise.all(addFilesToReport);
+	const reports = await getDataFromDb(req, db('reports_att'));
+	
+	if (reports) {
+		const addFilesToReport = reports.map(modifyReports);
 
-				return res.status(200).json({
-					status: 'success',
-					data: attReports
-				});
-			} else {
-				return res.status(404).json({
-					status: 'fail',
-					message: 'No data found'
-				});
-			}
-		}
+		const attReports = await Promise.all(addFilesToReport);
 
-		const att_reports = await db('reports_att')
-				.where(query_data)
-				.limit(limitNum)
-				.offset(pageNum * limitNum)
-				.orderBy(sortBy, sortOrder);
-
-		await dataFound(att_reports);
-	} catch (error) {
-		console.error(error);
-		return res.send(400).json({
-			error: error.message
+		return res.status(200).json({
+			status: 'success',
+			data: attReports
+		});
+	} else {
+		return res.status(404).json({
+			status: 'fail',
+			message: 'No data found'
 		});
 	}
-}
+});
 
-const createAttendance = async (req, res, _next) => {
-	try {
-		const data = req.body;
-		const { service_id, parish_code, week, month, year } = data;
+const createAttendance = asyncCatchInsert(async (req, res, _next) => {
+	const data = req.body;
 
-		const foundAttendanceData = await getDataFromDb(db('reports_att'), { service_id, parish_code, week, month, year });
+	const { service_id, parish_code, week, month, year } = data;
 
-		// if attendance exists, update
-		if (foundAttendanceData) {
-			const updateAttendanceData = await updateDb(db('reports_att'), data, { id: foundAttendanceData[0].id });
+	const foundAttendanceData = await getDataFromDb(req, db('reports_att'), { service_id, parish_code, week, month, year });
 
-			if (updateAttendanceData) {
-				const updateMonthlyData = await computeMonthlyData(updateAttendanceData[0]);
+	const foundMonthlyAtt = await getDataFromDb(req, db('reports_att_monthly'), {
+		service_id: service_id,
+		parish_code: parish_code,
+		month: month,
+		year: year
+	});
 
-				if (isEmpty(updateMonthlyData) || updateMonthlyData.error) {
-					// if updateMonthlyData is empty or returns an error, delete updateAttendanceData in reports_att and return error message (i.e perform a rollback)
-					await deleteFromDb(db('reports_att'), { id: updateAttendanceData[0].id });
+	// if attendance exists, update
+	if (foundAttendanceData) {
+		const monthlyAttData = await computeMonthlyData(req, data, 'update');
 
-					return res.status(400).json({
-						status: 'error',
-						message: 'Error updating monthly data.'
-					});
-				} else {
-					const updateMonthlyAtt = await db('reports_att_monthly').where({
-						service_id: updateMonthlyData['service_id'],
-						parish_code: updateMonthlyData['parish_code'],
-						month: updateMonthlyData['month'],
-						year: updateMonthlyData['year']
-					});
-
-					if (updateMonthlyAtt.length > 0) {
-						// if attendance for this month exists, update
-						const updateMonthlyAttData = await updateDb(db('reports_att_monthly'), updateMonthlyData, { id: updateMonthlyAtt[0].id });
-
-						// if updateMonthlyAttData is empty, delete updateAttendanceData in reports_att and return error message (i.e perform a rollback)
-						if (updateMonthlyAttData.length == 0) {
-							await deleteFromDb(db('reports_att'), { id: updateAttendanceData[0].id });
-		
-							return res.status(400).json({
-								status: 'error',
-								message: 'Error updating attendance data.'
-							});
-						} else {
-							return res.status(201).json({
-								status: 'success',
-								message: 'Attendance updated successfully',
-								data: updateAttendanceData
-							});
-						}
-					} else {
-						// if attendance for this month does not exist, create
-						const createMonthlyAttData = insertIntoDb(db('reports_att_monthly'), updateMonthlyData);
-
-						// if createMonthlyAttData is empty, delete updateAttendanceData in reports_att and return error message (i.e perform a rollback)
-						if (createMonthlyAttData.length == 0) {
-							deleteFromDb(db('reports_att'), { id: updateAttendanceData[0].id });
-		
-							return res.status(400).json({
-								status: 'error',
-								message: 'Error updating attendance data.'
-							});
-						} else {
-							return res.status(201).json({
-								status: 'success',
-								message: 'Attendance updated successfully',
-								data: updateAttendanceData
-							});
-						}
-					}
-				}
-			} else {
-				return res.status(400).json({
-					status: 'error',
-					message: 'Error updating attendance data.'
-				});
-			}
-		} else {
-			// if attendance does not exist, create
-			const insertAttendanceData = await insertIntoDb(db('reports_att'), data);
-
-			if (insertAttendanceData) {
-				const createMonthlyAttData = await computeMonthlyData(insertAttendanceData[0]);
-
-				if (isEmpty(createMonthlyAttData) || createMonthlyAttData.error) {
-					// if createMonthlyAttData is empty or returns an error, delete insertAttendanceData in reports_att and return error message (i.e perform a rollback)
-					await db('reports_att').where({ id: insertAttendanceData[0].id }).del()
-
-					return res.status(400).json({
-						status: 'error',
-						message: 'Error creating monthly data.'
-					});
-				} else {
-					const createMonthlyAtt = await db('reports_att_monthly').where({
-						service_id: insertAttendanceData[0].service_id,
-						parish_code: insertAttendanceData[0].parish_code,
-						month: insertAttendanceData[0].month,
-						year: insertAttendanceData[0].year
-					});
-
-					if (createMonthlyAtt.length > 0) {
-						// if attendance for this month exists, update
-						const updateMonthlyAttData = updateDb(db('reports_att_monthly'), createMonthlyAttData, { id: createMonthlyAtt[0].id });
-
-						// if updateMonthlyAttData is empty, delete insertAttendanceData in reports_att and return error message (i.e perform a rollback)
-						if (updateMonthlyAttData.length == 0) {
-							await db('reports_att').where({ id: insertAttendanceData[0].id }).del()
-		
-							return res.status(400).json({
-								status: 'error',
-								message: 'Error creating attendance data.'
-							});
-						} else {
-							return res.status(201).json({
-								status: 'success',
-								message: 'Attendance created successfully',
-								data: insertAttendanceData
-							});
-						}
-					} else {
-						// if attendance for this month does not exist, create
-						const createMonthlyAtt = await insertIntoDb(db('reports_att_monthly'), createMonthlyAttData);
-
-						// if createMonthlyAtt is empty, delete insertAttendanceData in reports_att and return error message (i.e perform a rollback)
-						if (createMonthlyAtt.length == 0) {
-							await db('reports_att').where({ id: insertAttendanceData[0].id }).del()
-		
-							return res.status(400).json({
-								status: 'error',
-								message: 'Error creating attendance data.'
-							});
-						} else {
-							return res.status(201).json({
-								status: 'success',
-								message: 'Attendance created successfully',
-								data: insertAttendanceData
-							});
-						}
-					}
-				}
-			} else {
-				return res.status(400).json({
-					status: 'error',
-					message: 'Error creating attendance data.'
-				});
-			}
+		if (isEmpty(monthlyAttData) || monthlyAttData.error) {
+			return res.status(400).json({
+				status: 'error',
+				message: 'Error updating monthly data.'
+			});
 		}
-	} catch (error) {
-		console.error(error);
+		
+		if (foundMonthlyAtt) {
+			// if attendance for this month exists, update
+			const updateMonthlyAttData = await updateDb(db('reports_att_monthly'), monthlyAttData, { id: foundMonthlyAtt[0].id });
+			await updateOpsHelper(updateDb, updateMonthlyAttData, db('reports_att'), data, { id: foundAttendanceData[0].id }, res);
+		} else {
+			// if attendance for this month does not exist, create
+			const createMonthlyAttData = insertIntoDb(db('reports_att_monthly'), monthlyAttData);
+			await updateOpsHelper(updateDb, createMonthlyAttData, db('reports_att'), data, { id: foundAttendanceData[0].id }, res);
+		}
+	} else {
+		const monthlyAttData = await computeMonthlyData(req, data, 'insert');
 
-		if (error.code == '23502') {
-			return res.status(400).send({
-				status: 'fail',
-				message: `Please provide a value for the '${error.column}' column as it cannot be null.
-							Kindly ensure to check all required fields are filled.`
+		if (isEmpty(monthlyAttData) || monthlyAttData.error) {
+			return res.status(400).json({
+				status: 'error',
+				message: 'Error inserting monthly data.'
 			});
 		}
 
-		return res.status(400).send(`Error: ${error.message}`);
+		if (foundMonthlyAtt) {
+			// if attendance for this month exists, update
+			const updateMonthlyAttData = await updateDb(db('reports_att_monthly'), monthlyAttData, { id: foundMonthlyAtt[0].id });
+			await insertOpsHelper(insertIntoDb, updateMonthlyAttData, db('reports_att'), data, res);
+		} else {
+			// if attendance for this month does not exist, create
+			const insertMonthlyAttData = await insertIntoDb(db('reports_att_monthly'), monthlyAttData);
+			await insertOpsHelper(insertIntoDb, insertMonthlyAttData, db('reports_att'), data, res);
+		}
 	}
-}
+});
 
-const computeMonthlyData = async (attendanceData) => {
+const computeMonthlyData = async (req, attendanceData, ops) => {
 	try {
 		const default_report_query = {
 			service_id: attendanceData['service_id'],
@@ -254,24 +137,46 @@ const computeMonthlyData = async (attendanceData) => {
 		};
 
 		const default_report_cols = [
-			'service_id', 'parish_code', 'area_code', 'zone_code', 'prov_code', 'reg_code', 'month', 'year'
+			'service_id', 'parish_code', 'area_code', 'zone_code', 'prov_code', 'reg_code', 'sub_cont_code', 'cont_code', 'month', 'year'
 		];
 
 		const monthlyData = {};
+	
+		const weeksCount = await db('reports_att').count('week').where(default_report_query);
 
-		const monthly_averages = await db('reports_att').avg(people_obj).where(default_report_query);
+		let monthly_sum, numWeeks;
 	
-		const avg_men = Math.round(Number(monthly_averages[0]['men']));
-		const avg_women = Math.round(Number(monthly_averages[0]['women']));
-		const avg_children = Math.round(Number(monthly_averages[0]['children']));
-		const avg_total = avg_men + avg_women + avg_children
-	
-		const monthly_sum = await db('reports_att').sum(people_obj).where(default_report_query);
-	
-		const men 		= Number(monthly_sum[0]['men']);
-		const women 	= Number(monthly_sum[0]['women']);
-		const children 	= Number(monthly_sum[0]['children']);
+		if (ops === 'insert') {
+			monthly_sum = await db('reports_att').sum(people_obj).where(default_report_query);
+			numWeeks = Number(weeksCount[0].count) + 1;
+		}
+
+		if (ops === 'update') {
+			const dbData = await getDataFromDb(req, db('reports_att'), {
+				service_id: attendanceData['service_id'],
+				parish_code: attendanceData['parish_code'],
+				week: attendanceData['week'],
+				month: attendanceData['month'],
+				year: attendanceData['year'],
+				service_date: attendanceData['service_date']
+			});
+
+			monthly_sum = await db('reports_att')
+								.sum(people_obj)
+								.where(default_report_query)
+								.andWhereNot({id: dbData[0].id});
+			numWeeks = Number(weeksCount[0].count);
+		}
+
+		const men 	= Number(monthly_sum[0]['men']) + (attendanceData['men'] ? attendanceData['men'] : 0);
+		const women 	= Number(monthly_sum[0]['women']) + (attendanceData['women'] ? attendanceData['women'] : 0);
+		const children = Number(monthly_sum[0]['children']) + (attendanceData['children'] ? attendanceData['children'] : 0);
 		const total_mwc = men + women + children
+
+		const avg_men = Math.round(men / numWeeks);
+		const avg_women = Math.round(women / numWeeks);
+		const avg_children = Math.round(children / numWeeks);
+		const avg_total = avg_men + avg_women + avg_children;
 	
 		const further_reports_monthly_sum = await db('reports_att').sum(further_report_obj).where(further_report_query);
 
@@ -280,7 +185,7 @@ const computeMonthlyData = async (attendanceData) => {
 		}
 
 		for (let value of Object.values(further_report_obj)) {
-			monthlyData[value] = Number(further_reports_monthly_sum[0][value]);
+			monthlyData[value] = Number(further_reports_monthly_sum[0][value]) + (attendanceData[value] ? attendanceData[value] : 0);
 		}
 
 		monthlyData['men'] 			= men;
@@ -294,89 +199,79 @@ const computeMonthlyData = async (attendanceData) => {
 	
 		return monthlyData;
 	} catch (error) {
-		console.error(error.message);
-		await db('reports_att').where({ id: attendanceData.id }).del()
+		console.error(error);
+
 		return {
 			error: error.message
 		}
 	}
 }
 
-const deleteAttendance = async (req, res, _next) => {
-	try {
-		const {
-			id,
-			service_id,
-			parish_code,
-			area_code,
-			zone_code,
-			province_code,
-			region_code,
-			week,
-			service_date,
-			month,
-			year
-		} = req.query;
+const deleteAttendance = asyncCatchRegular (async (req, res, _next) => {
+	const {
+		id,
+		service_id,
+		parish_code,
+		area_code,
+		zone_code,
+		province_code,
+		region_code,
+		week,
+		service_date,
+		month,
+		year
+	} = req.query;
 
-		let query = {};
+	let query = {};
 
-		if (id) query.id = id;
-		if (service_id) query.service_id = service_id;
-		if (parish_code) query.parish_code = parish_code;
-		if (area_code) query.area_code = area_code;
-		if (zone_code) query.zone_code = zone_code;
-		if (province_code) query.province_code = province_code;
-		if (region_code) query.region_code = region_code;
-		if (week) query.week = week;
-		if (service_date) query.service_date = service_date;
-		if (month) query.month = month;
-		if (year) query.year = year;
+	if (id) query.id = id;
+	if (service_id) query.service_id = service_id;
+	if (parish_code) query.parish_code = parish_code;
+	if (area_code) query.area_code = area_code;
+	if (zone_code) query.zone_code = zone_code;
+	if (province_code) query.province_code = province_code;
+	if (region_code) query.region_code = region_code;
+	if (week) query.week = week;
+	if (service_date) query.service_date = service_date;
+	if (month) query.month = month;
+	if (year) query.year = year;
 
-		const attendance = await db('reports_att').where(query).first().del();
+	const attendance = await db('reports_att').where(query).first().del();
 
-		if (attendance) {
-			return res.status(200).json({
-				status: 'success',
-				message: 'Attendance deleted successfully'
-			});
-		} else {
-			return res.status(404).json({
-				status: 'fail',
-				message: 'No attendance found for the query data supplied'
-			});
-		}
-	} catch (error) {
-		console.error(error)
-		return error
+	if (attendance) {
+		return res.status(200).json({
+			status: 'success',
+			message: 'Attendance deleted successfully'
+		});
+	} else {
+		return res.status(404).json({
+			status: 'fail',
+			message: 'No attendance found for the query data supplied'
+		});
 	}
-}
+});
 
-const getMonthlyAttendance = async (req, res, _next) => {
-	try {
-		const { query_data, pageNum, limitNum, sortBy, sortOrder } = getQueryData(req);
+const getMonthlyAttendance = asyncCatchRegular (async (req, res, _next) => {
+	const { query_data, pageNum, limitNum, sortBy, sortOrder } = getQueryData(req);
 
-		const monthlyReport = await db('reports_att_monthly')
-							.where(query_data)
-							.limit(limitNum)
-							.offset(pageNum * limitNum)
-							.orderBy(sortBy, sortOrder);
+	const monthlyReport = await db('reports_att_monthly')
+						.where(query_data)
+						.limit(limitNum)
+						.offset(pageNum * limitNum)
+						.orderBy(sortBy, sortOrder);
 
-		if (monthlyReport.length > 0) {
-			return res.status(200).json({
-				status: 'success',
-				data: monthlyReport
-			});
-		} else {
-			return res.status(404).json({
-				status: 'fail',
-				message: 'No data found'
-			});
-		}
-	} catch (error) {
-		console.error(error);
-		return error;
+	if (monthlyReport.length > 0) {
+		return res.status(200).json({
+			status: 'success',
+			data: monthlyReport
+		});
+	} else {
+		return res.status(404).json({
+			status: 'fail',
+			message: 'No data found'
+		});
 	}
-}
+});
 
 export { 
 	getAttendance,

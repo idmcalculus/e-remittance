@@ -1,16 +1,11 @@
 import { Router } from "express";
 import { csrImageUpload } from "../middlewares/multer.js";
 import { fileUpload, getCsrFiles } from "../controllers/csr_images.js";
+import { csrLocked } from '../middlewares/admin_settings.js';
 
 const router = Router();
 
-function renderFileUploadPage (req, res, next) {
-    res.render('files', { 
-        title: 'E-remittance App'
-    });
-}
-
-router.post('/', csrImageUpload, fileUpload);
+router.post('/', csrImageUpload, csrLocked, fileUpload);
 router.get('/', getCsrFiles);
 
 export default router;

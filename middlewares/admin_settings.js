@@ -1,87 +1,82 @@
+import { config } from "dotenv";
 import isEmpty from "lodash/isEmpty.js";
+import { DateTime, Settings } from "luxon";
 import db from "../services/db.js";
+import { asyncCatchInsert } from "../utils/helpers.js";
+import { getDataFromDb } from "../utils/dbOps.js";
 
-const remittanceLocked = async (req, res, next) => {
-	try {
-		const { month, year } = req.body;
+config();
 
-		const queryData = {
-			rem_month: month,
-			rem_year: year
+Settings.defaultZone = process.env.TIMEZONE;
+
+const locked = async (req, res, next, comm_date, comp_date, opsMsg) => {
+	const { parish_code, month, year } = req.body;
+
+	const queryData = {
+		rem_month: month,
+		rem_year: year
+	}
+
+	const unlocked = await db('specially_unlocked_churches').select('unlock_start_date', 'unlock_end_date').where({ parish_code, ...queryData }).first();
+
+	const lock = await db('settings_admin_report').select(comm_date, comp_date).where(queryData).first();
+
+	let commDate, compDate, specialUnlockStartDate, specialUnlockEndDate;
+
+	if (isEmpty(lock) || lock === undefined) {
+		return res.status(403).json({
+			status: 'fail',
+			message: 'You have no access to this resource at this time.'
+		})
+	} else {
+		commDate = lock[comm_date];
+		compDate = lock[comp_date];
+	}
+
+	const currDate = DateTime.now().toFormat('yyyy-MM-dd');
+
+	if (currDate < commDate || currDate > compDate) {
+		let message;
+
+		if (currDate < commDate) {
+			message = `${opsMsg} commences on ${commDate}.`;
 		}
 
-		const lockRemit = await db('settings_admin_report').select('lock_remittance').where(queryData).first();
-		console.log(lockRemit);
+		if (currDate > compDate) {
+			message = `${opsMsg} closed on ${compDate}.`;
+		}
 
-		if (!isEmpty(lockRemit) && lockRemit.lock_remittance === true) {
+		if (isEmpty(unlocked) || unlocked === undefined) {
 			return res.status(403).json({
 				status: 'fail',
-				message: 'The remittance is locked for this period'
-			})
-		}
+				message: 'You have no access to this resource at this time.  ' + message
+			});
+		} else {
+			specialUnlockStartDate = unlocked['unlock_start_date'];
+			specialUnlockEndDate = unlocked['unlock_end_date'];
 
-		next()
-	} catch (error) {
-		console.error(error)
-		return res.status(400).json({
-			error: error.message
-		}) 
+			if (currDate < specialUnlockStartDate || currDate > specialUnlockEndDate) {
+				return res.status(403).json({
+					status: 'fail',
+					message: 'You have no access to this resource at this time.  ' + message
+				});
+			}
+		}
 	}
+
+	next();
 }
 
-const csrLocked = async (req, res, next) => {
-	try {
-		const { month, year } = req.body;
+const remittanceLocked = asyncCatchInsert(async (req, res, next) => {
+	await locked(req, res, next, 'date_of_comm', 'date_of_comp', 'Remittance');
+});
 
-		const queryData = {
-			rem_month: month,
-			rem_year: year
-		}
+const csrLocked = asyncCatchInsert(async (req, res, next) => {
+	await locked(req, res, next, 'csr_comm_date', 'csr_comp_date', 'CSR Reporting');
+});
 
-		const lockCsr = await db('settings_admin_report').select('csr_lock').where(queryData).first();
-		console.log(lockCsr);
-
-		if (!isEmpty(lockCsr) && lockCsr.lock_remittance === true) {
-			return res.status(403).json({
-				status: 'fail',
-				message: 'CSR Report is locked for this period'
-			})
-		}
-
-		next()
-	} catch (error) {
-		console.error(error)
-		return res.status(400).json({
-			error: error.message
-		}) 
-	}
-}
-
-const scanLocked = async (req, res, next) => {
-	try {
-		const { month, year } = req.body;
-
-		const queryData = {
-			rem_month: month,
-			rem_year: year
-		}
-
-		const { lockScan } = await db('settings_admin_report').select('scan_lock').where(queryData).first();
-
-		if (lockScan === true) {
-			return res.status(403).json({
-				status: 'fail',
-				message: 'Scanning Report is locked for this period'
-			})
-		}
-
-		next()
-	} catch (error) {
-		console.error(error)
-		return res.status(400).json({
-			error: error.message
-		}) 
-	}
-}
+const scanLocked = asyncCatchInsert(async (req, res, next) => {
+	await locked(req, res, next, 'scan_comm_date', 'scan_comp_date', 'Source Document Upload');
+});
 
 export { remittanceLocked, csrLocked, scanLocked }

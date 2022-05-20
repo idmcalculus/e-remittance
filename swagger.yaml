@@ -1,0 +1,363 @@
+/**	
+ * @swagger
+ * paths:
+ *   /attendance:
+ *     get:
+ *     tags:
+ *  - Reports Attendance
+ *  summary: Retrieves some/all Attendance Reports
+ *  description:
+ *    By passing in the appropriate options in the query string, you can search for
+ *    available attendance reports in the system
+ *  parameters:
+ *    - $ref: '#/components/parameters/id_query'
+ *    - $ref: '#/components/parameters/service_id_query'
+ *    - $ref: '#/components/parameters/parish_code_query'
+ *    - $ref: '#/components/parameters/area_code_query'
+ *    - $ref: '#/components/parameters/zone_code_query'
+ *    - $ref: '#/components/parameters/province_code_query'
+ *    - $ref: '#/components/parameters/region_code_query'
+ *    - $ref: '#/components/parameters/week_query'
+ *    - $ref: '#/components/parameters/service_date_query'
+ *    - $ref: '#/components/parameters/month_query'
+ *    - $ref: '#/components/parameters/year_query'
+ *    - $ref: '#/components/parameters/page_query'
+ *    - $ref: '#/components/parameters/limit_query'
+ *    - $ref: '#/components/parameters/sort_query'
+ *    - $ref: '#/components/parameters/order_query'
+ *  responses:
+ *    '200':
+ *      description: array of all reports attendance
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: array
+ *            items:
+ *              $ref: '#/components/schemas/GetAttendanceObject'
+ *    '400':
+ *      description: Error retrieving attendance
+ * 
+ * components:
+  schemas:
+    id:
+      type: integer
+      example: 1
+    service_id:
+      type: integer
+      example: 1
+    parish_code:
+      type: string
+      example: 715701
+    area_code:
+      type: string
+      example: AR300000000
+    zone_code:
+      type: string
+      example: ZN300000000
+    province_code:
+      type: string
+      example: AB34
+    region_code:
+      type: string
+      example: R01
+    service_date:
+      type: string
+      format: date
+      example: '2016-08-29'
+    week:
+      type: string
+      example: Week 1
+    month:
+      type: string
+      example: March
+    year:
+      type: integer
+      example: 2022
+    date_of_activity:
+      type: string
+      format: date
+      example: '2016-08-29'
+    category_id:
+      type: integer
+      example: 5
+    sub_category_id:
+      type: integer
+      example: 11
+    cat_name:
+      type: string
+      example: 'Education'
+    sub_cat_name:
+      type: string
+      example: 'School building'
+    created_at:
+      type: string
+      format: date-time
+      example: '2020-01-01T00:00:00.000Z'
+    updated_at:
+      type: string
+      format: date-time
+      example: '2020-01-01T00:00:00.000Z'
+    status:
+      type: string
+      example: "1"
+    CreateAttendanceObject:
+      type: object
+      required:
+        - parish_code
+        - area_code
+        - zone_code
+        - province_code
+        - region_code
+      properties:
+        service_id:
+          $ref: '#/components/schemas/service_id'
+        parish_code:
+          $ref: '#/components/schemas/parish_code'
+        area_code:
+          $ref: '#/components/schemas/area_code'
+        zone_code:
+          $ref: '#/components/schemas/zone_code'
+        province_code:
+          $ref: '#/components/schemas/province_code'
+        region_code:
+          $ref: '#/components/schemas/region_code'
+        service_date:
+          $ref: '#/components/schemas/service_date'
+        week:
+          $ref: '#/components/schemas/week'
+        month:
+          $ref: '#/components/schemas/month'
+        year:
+          $ref: '#/components/schemas/year'
+    GetAttendanceObject:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        service_id:
+          $ref: '#/components/schemas/service_id'
+        parish_code:
+          $ref: '#/components/schemas/parish_code'
+        area_code:
+          $ref: '#/components/schemas/area_code'
+        zone_code:
+          $ref: '#/components/schemas/zone_code'
+        province_code:
+          $ref: '#/components/schemas/province_code'
+        region_code:
+          $ref: '#/components/schemas/region_code'
+        service_date:
+          $ref: '#/components/schemas/service_date'
+        week:
+          $ref: '#/components/schemas/week'
+        month:
+          $ref: '#/components/schemas/month'
+        year:
+          $ref: '#/components/schemas/year'
+        men:
+          type: integer
+          example: 210
+        women:
+          type: integer
+          example: 210
+        children:
+          type: integer
+          example: 210
+        total_mwc:
+          type: integer
+          example: 1000
+        avg_men:
+          type: integer
+          example: 210
+        avg_women:
+          type: integer
+          example: 210
+        avg_children:
+          type: integer
+          example: 210
+        avg_total:
+          type: integer
+          example: 1000
+        marriages:
+          type: integer
+        births:
+          type: integer
+        demises:
+          type: integer
+        converts:
+          type: integer
+        first_timers:
+          type: integer
+        hf_centres:
+          type: integer
+        unord_ministers:
+          type: integer
+        bapt_workers:
+          type: integer
+        bapt_members:
+          type: integer
+        att_s_prog:
+          type: integer
+        att_vigil:
+          type: integer
+        new_workers:
+          type: integer
+        asst_pastors:
+          type: integer
+        full_pastors:
+          type: integer
+        dcns:
+          type: integer
+        total_marriages:
+          type: integer
+        total_births:
+          type: integer
+        total_demises:
+          type: integer
+        total_converts:
+          type: integer
+        total_first_timers:
+          type: integer
+        total_hf_centres:
+          type: integer
+        total_unord_ministers:
+          type: integer
+        total_bapt_workers:
+          type: integer
+        total_bapt_members:
+          type: integer
+        total_att_s_prog:
+          type: integer
+        total_att_vigil:
+          type: integer
+        total_new_workers:
+          type: integer
+        total_asst_pastors:
+          type: integer
+        total_full_pastors:
+          type: integer
+        total_dcns:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+          example: '2022-03-31T13:02:26.705Z'
+        updated_at:
+          type: string
+          format: date-time
+          example: '2022-03-31T13:02:26.705Z'
+  parameters:
+    id_query:
+      in: query
+      name: id
+      description: pass an optional id to retrieve the data with that id
+      required: false
+      schema:
+        type: integer
+    service_id_query:
+      in: query
+      name: service_id
+      description: id of the service for which attendance report should be retrieved
+      required: false
+      schema:
+        type: integer
+    parish_code_query:
+      in: query
+      name: parish_code
+      description: code peculiar to a parish in order to retrieve all data for that parish
+      required: false
+      schema:
+        type: string
+    area_code_query:
+      in: query
+      name: area_code
+      description: code peculiar to an Area in order to retrieve all data for that Area
+      required: false
+      schema:
+        type: string
+    zone_code_query:
+      in: query
+      name: zone_code
+      description: code peculiar to a Zone in order to retrieve all data for that Zone
+      required: false
+      schema:
+        type: string
+    province_code_query:
+      in: query
+      name: province_code
+      description: code peculiar to a Province in order to retrieve all data for that Province
+      required: false
+      schema:
+        type: string
+    region_code_query:
+      in: query
+      name: region_code
+      description: code peculiar to a region in order to retrieve all data for that region
+      required: false
+      schema:
+        type: string
+    week_query:
+      in: query
+      name: week
+      description: supply the week the report was recorded
+      required: false
+      schema:
+        type: string
+        example: 'Week 1'
+    service_date_query:
+      in: query
+      name: service_date
+      description: The date a service was held
+      required: false
+      schema:
+        type: string
+        format: date
+        example: '2016-08-29'
+    month_query:
+      in: query
+      name: month
+      description: The month the report was recorded
+      required: false
+      schema:
+        type: string
+        example: March
+    year_query:
+      in: query
+      name: year
+      description: The year the report was recorded
+      required: false
+      schema:
+        type: integer
+        example: 2022
+    page_query:
+      in: query
+      name: page
+      description: supply a page to calculate offset of records to skip
+      required: false
+      schema:
+        type: integer
+    limit_query:
+      in: query
+      name: limit
+      description: maximum number of records to return
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+        maximum: 100
+    sort_query:
+      in: query
+      name: sort
+      description: how the records should be sorted
+      required: false
+      schema:
+        type: string
+    order_query:
+      in: query
+      name: order
+      description: the order by which the records will be sorted
+      required: false
+      schema:
+        type: string
+        example: asc
+ */

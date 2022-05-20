@@ -1,4 +1,6 @@
+import isEmpty from 'lodash/isEmpty.js';
 import isArray from 'lodash/isArray.js';
+import { getQueryData } from './getQueryData.js';
 
 const insertIntoDb = async (db, data) => {
 	const insertedData = await db.insert(data).returning('*');
@@ -10,8 +12,23 @@ const insertIntoDb = async (db, data) => {
 	}
 }
 
-const getDataFromDb = async(db, queryData) => {
-	const retrievedData = await db.where(queryData);
+const getDataFromDb = async(req, db, queryData = {}, useRaw = false, rawQuery = '') => {
+	let retrievedData;
+
+	if (isEmpty(queryData)) {
+		queryData = getQueryData(req)['query_data'];
+	}
+
+	const { pageNum, limitNum, sortBy, sortOrder } = getQueryData(req);
+	
+	if (useRaw) {
+		retrievedData = await db.raw(rawQuery);
+	} else {
+		retrievedData = await db.where(queryData)
+								.limit(limitNum)
+								.offset(pageNum * limitNum)
+								.orderBy(sortBy, sortOrder);
+	}
 
 	if (isArray(retrievedData) && retrievedData.length > 0) {
 		return retrievedData;

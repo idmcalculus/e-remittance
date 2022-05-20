@@ -1,86 +1,72 @@
-import isEmpty from 'lodash/isEmpty.js';
 import db from '../services/db.js';
+import { getDataFromDb, insertIntoDb, updateDb } from '../utils/dbOps.js';
+import { asyncCatchInsert, asyncCatchRegular } from '../utils/helpers.js';
 
-const createSettings = async (req, res, next) => {
-	try {
-		const data = req.body;
+const createSettings = asyncCatchInsert(async (req, res, _next) => {
+	const data = req.body;
 
-		const { rem_month, rem_year } = data;
+	const { rem_month, rem_year, set_as_default, report_def, csr_def, scan_def } = data;
 
-		const foundSettingsData = await db('settings_admin_report').where({ rem_month, rem_year });
+	const foundSettingsData = await getDataFromDb(req, db('settings_admin_report'), { rem_month, rem_year });
 
-		if (foundSettingsData.length > 0) {
-			const updateSettingsData = await db('settings_admin_report').where({ id: foundSettingsData[0].id }).update(data).returning('*');
+	if (foundSettingsData) {
+		const updateSettingsData = await updateDb(db('settings_admin_report'), data, { id: foundSettingsData[0].id });
 
-			if (updateSettingsData.length > 0) {
-				return res.status(201).json({
-					status: 'success',
-					message: 'Basic settings updated successfully',
-					data: updateSettingsData
-				});
-			} else {
-				return res.status(400).json({
-					status: 'error',
-					message: 'Error updating settings'
-				});
-			}
+		if (updateSettingsData) {
+			await adjustDefaults(db('settings_admin_report'), updateSettingsData[0].id, set_as_default, report_def, csr_def, scan_def);
+
+			return res.status(201).json({
+				status: 'success',
+				message: 'Basic settings updated successfully',
+				data: updateSettingsData
+			});
 		} else {
-			const createSettingsData = await db('settings_admin_report').insert(data).returning('*');
-
-			if (createSettingsData.length > 0) {
-				return res.status(201).json({
-					status: 'success',
-					message: 'Basic settings created successfully',
-					data: createSettingsData
-				});
-			} else {
-				return res.status(400).json({
-					status: 'error',
-					message: 'Error creating settings'
-				});
-			}
+			return res.status(400).json({
+				status: 'error',
+				message: 'Error updating settings'
+			});
 		}
-	} catch (error) {
-		console.log(error);
-		return res.status(400).json({
-			code: error.code,
-			error: error.message
-		});
+	} else {
+		const createSettingsData = await insertIntoDb(db('settings_admin_report'), data);
+
+		if (createSettingsData) {
+			await adjustDefaults(db('settings_admin_report'), createSettingsData[0].id, set_as_default, report_def, csr_def, scan_def);
+
+			return res.status(201).json({
+				status: 'success',
+				message: 'Basic settings created successfully',
+				data: createSettingsData
+			});
+		} else {
+			return res.status(400).json({
+				status: 'error',
+				message: 'Error creating settings'
+			});
+		}
 	}
+});
+
+const adjustDefaults = async (db, id, set_as_default, report_def, csr_def, scan_def) => {
+	if (set_as_default) await db.update({ set_as_default: 0 }).whereNot({ id });
+	if (report_def) await db.update({ report_def: 0 }).whereNot({ id });
+	if (scan_def) await db.update({ scan_def: 0 }).whereNot({ id });
+	if (csr_def) await db.update({ csr_def: 0 }).whereNot({ id });
 }
 
-const getSettings = async (req, res, next) => {
-	try {
-		const dataFound = (data) => {
-			if (data.length > 0) {
-				return res.status(200).json({
-					status: 'success',
-					data: data
-				});
-			} else {
-				return res.status(404).json({
-					status: 'fail',
-					message: 'No data found'
-				});
-			}
-		}
+const getSettings = asyncCatchRegular(async (req, res, next) => {
+	const settingsData = await getDataFromDb(req, db('settings_admin_report'));
 
-		const { rem_month, rem_year } = req.query;
-
-		const query_data = {};
-
-		if (rem_month) query_data.rem_month = rem_month;
-		if (rem_year) query_data.rem_year = rem_year;
-
-		const settingsData = await db('settings_admin_report').where(query_data);
-
-		dataFound(settingsData);
-	} catch (error) {
-		console.error(error);
-		return res.status(400).json({
-			error: error.message
+	if (settingsData) {
+		return res.status(200).json({
+			status: 'success',
+			data: settingsData
+		});
+	} else {
+		return res.status(404).json({
+			status: 'fail',
+			message: 'No data found'
 		});
 	}
-}
+});
 
 export { createSettings, getSettings };

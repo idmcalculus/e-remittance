@@ -11,8 +11,16 @@ import { remittanceLocked, scanLocked } from '../middlewares/admin_settings.js';
 
 const router = Router();
 
+/**
+ * @swagger
+ * tags:
+ *   - name: Reports Attendance
+ *     description: |
+ *       For attendance in Church services in parishes, areas, zones, provinces or regions
+ */
+
 router.post('/', remittanceLocked, createAttendance);
-router.post('/source_doc', scanLocked, sourceDocUpload, fileUpload);
+router.post('/source_doc', sourceDocUpload, scanLocked, fileUpload);
 router.get('/', getAttendance);
 router.get('/monthly_report', getMonthlyAttendance);
 router.get('/source_doc', getSourceDocs);

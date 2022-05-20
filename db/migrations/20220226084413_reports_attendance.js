@@ -20,6 +20,8 @@ const { onUpdateTrigger } = knexConfig;
 			table.string('zone_code', 30).notNullable();
 			table.string('prov_code', 30).notNullable();
 			table.string('reg_code', 30).notNullable();
+			table.string('sub_cont_code', 255).notNullable();
+			table.string('cont_code', 255).notNullable();
 			table.date('service_date').notNullable();
 			table.string('week').notNullable();
 			table.enum('month', [
@@ -27,29 +29,24 @@ const { onUpdateTrigger } = knexConfig;
 				'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
 			]).notNullable();
 			table.integer('year').notNullable();
-			table.integer('men').nullable();
-			table.integer('women').nullable();
-			table.integer('children').nullable();
-			table.integer('total_mwc').nullable();
-			table.integer('marriages').nullable();
-			table.integer('births').nullable();
-			table.integer('demises').nullable();
-			table.integer('converts').nullable();
-			table.integer('first_timers').nullable();
-			table.integer('hf_centres').nullable();
-			table.integer('unord_ministers').nullable();
-			table.integer('bapt_workers').nullable();
-			table.integer('bapt_members').nullable();
-			table.integer('att_s_prog').nullable();
-			table.integer('att_vigil').nullable();
-			table.integer('new_workers').nullable();
-			table.integer('asst_pastors').nullable();
-			table.integer('full_pastors').nullable();
-			table.integer('dcns').nullable();
-			table.integer('avg_men').nullable();
-			table.integer('avg_women').nullable();
-			table.integer('avg_children').nullable();
-			table.integer('avg_total').nullable();
+			table.integer('men').defaultTo(0);
+			table.integer('women').defaultTo(0);
+			table.integer('children').defaultTo(0);
+			table.integer('marriages').defaultTo(0);
+			table.integer('births').defaultTo(0);
+			table.integer('demises').defaultTo(0);
+			table.integer('converts').defaultTo(0);
+			table.integer('first_timers').defaultTo(0);
+			table.integer('hf_centres').defaultTo(0);
+			table.integer('unord_ministers').defaultTo(0);
+			table.integer('bapt_workers').defaultTo(0);
+			table.integer('bapt_members').defaultTo(0);
+			table.integer('att_s_prog').defaultTo(0);
+			table.integer('att_vigil').defaultTo(0);
+			table.integer('new_workers').defaultTo(0);
+			table.integer('asst_pastors').defaultTo(0);
+			table.integer('full_pastors').defaultTo(0);
+			table.integer('dcns').defaultTo(0);
 			table.integer('comp').nullable();
 			table.integer('status').nullable();
 			table.string('rem_by', 30).nullable();
@@ -60,7 +57,9 @@ const { onUpdateTrigger } = knexConfig;
 			table.timestamps(false, true);
 			table.timestamp('deleted_at').nullable();
 			table.unique(['service_id', 'parish_code', 'week', 'month', 'year']);
-		}).raw(onUpdateTrigger('reports_att'));
+		})
+		.raw('ALTER TABLE reports_att ADD COLUMN total_mwc integer GENERATED ALWAYS AS (men + women + children) STORED;')
+		.raw(onUpdateTrigger('reports_att'));
 	} catch (error) {
 		console.error(error);
 	}

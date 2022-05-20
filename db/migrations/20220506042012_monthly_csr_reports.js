@@ -9,11 +9,27 @@ const { onUpdateTrigger } = knexConfig;
 	try {
 		return knex.schema.createTable('monthly_csr_reports', table => {
 			table.increments('id').primary();
+			table.integer('category_id', 11)
+				.notNullable()
+				.unsigned()
+				.index()
+				.references('id')
+				.inTable('csr_categories')
+				.onDelete('CASCADE');
+			table.integer('sub_category_id', 11)
+				.notNullable()
+				.unsigned()
+				.index()
+				.references('id')
+				.inTable('csr_sub_categories')
+				.onDelete('CASCADE');
 			table.string('parish_code', 255).notNullable();
 			table.string('area_code', 255).notNullable();
 			table.string('zone_code', 30).notNullable();
 			table.string('prov_code', 255).notNullable();
 			table.string('reg_code', 255).notNullable();
+			table.string('sub_cont_code', 255).notNullable();
+			table.string('cont_code', 255).notNullable();
 			table.enum('month', [
 				'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
 				'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
@@ -22,13 +38,11 @@ const { onUpdateTrigger } = knexConfig;
 			table.integer('num_activity').notNullable();
 			table.float('expenditure').notNullable();
 			table.float('csr_offering').nullable();
-			table.json('cat_sub_cat_ids').notNullable();
 			table.integer('beneficiaries', 255).notNullable();
 			table.integer('souls', 255).notNullable();
 			table.integer('num_lga', 255).notNullable();
 			table.integer('num_state', 255).notNullable();
 			table.integer('num_country', 255).notNullable();
-			table.integer('num_files').notNullable();
 			table.timestamps(false, true);
 			table.timestamp('deleted_at').nullable();
 		})
