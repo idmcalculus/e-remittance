@@ -3,62 +3,122 @@ import isEmpty from "lodash/isEmpty.js";
 import { DateTime, Settings } from "luxon";
 import db from "../services/db.js";
 import { asyncCatchInsert } from "../utils/helpers.js";
-import { getDataFromDb } from "../utils/dbOps.js";
 
 config();
 
 Settings.defaultZone = process.env.TIMEZONE;
 
-const locked = async (req, res, next, comm_date, comp_date, opsMsg) => {
-	const { parish_code, month, year } = req.body;
+const locked = async (req, res, next, comm_date, comp_date, ops) => {
+	const { parish_code, area_code, zone_code, prov_code, reg_code, sub_cont_code, cont_code, month, year } = req.body;
 
 	const queryData = {
-		rem_month: month,
+		rem_month: month, 
 		rem_year: year
 	}
-
-	const unlocked = await db('specially_unlocked_churches').select('unlock_start_date', 'unlock_end_date').where({ parish_code, ...queryData }).first();
-
-	const lock = await db('settings_admin_report').select(comm_date, comp_date).where(queryData).first();
-
-	let commDate, compDate, specialUnlockStartDate, specialUnlockEndDate;
-
-	if (isEmpty(lock) || lock === undefined) {
-		return res.status(403).json({
-			status: 'fail',
-			message: 'You have no access to this resource at this time.'
-		})
-	} else {
-		commDate = lock[comm_date];
-		compDate = lock[comp_date];
-	}
-
 	const currDate = DateTime.now().toFormat('yyyy-MM-dd');
 
-	if (currDate < commDate || currDate > compDate) {
-		let message;
+	let unlockTypeCodes = [ parish_code, area_code, zone_code, prov_code ];
 
-		if (currDate < commDate) {
-			message = `${opsMsg} commences on ${commDate}.`;
-		}
+	unlockTypeCodes = unlockTypeCodes.filter(code => code !== undefined);
 
-		if (currDate > compDate) {
-			message = `${opsMsg} closed on ${compDate}.`;
-		}
+	const specialUnlock = await db('special_unlock')
+							.select('*')
+							.where('unlock_end_date', '>=', currDate)
+							.andWhere('unlock_start_date', '<=', currDate)
+							.whereIn('unlock_type_code', unlockTypeCodes);
 
-		if (isEmpty(unlocked) || unlocked === undefined) {
-			return res.status(403).json({
-				status: 'fail',
-				message: 'You have no access to this resource at this time.  ' + message
-			});
-		} else {
-			specialUnlockStartDate = unlocked['unlock_start_date'];
-			specialUnlockEndDate = unlocked['unlock_end_date'];
+	const regionSettings = await db('admin_settings_report')
+							.select('*')
+							.where({
+								admin_type: 'region',
+								admin_type_code: reg_code,
+								...queryData
+							}).first();
 
-			if (currDate < specialUnlockStartDate || currDate > specialUnlockEndDate) {
+	const subContSettings = await db('admin_settings_report')
+							.select('*')
+							.where({
+								admin_type: 'sub_continent',
+								admin_type_code: sub_cont_code,
+								...queryData
+							}).first();
+
+	const contSettings = await db('admin_settings_report')
+							.select('*')
+							.where({
+								admin_type: 'continent',
+								admin_type_code: cont_code,
+								...queryData
+							}).first();
+
+	let message = 'You have no access to this resource at this time.';
+
+	if (isEmpty(regionSettings)) {
+		if (isEmpty(subContSettings)) {
+			if (!isEmpty(contSettings)) {
+				const contCommDate = contSettings[comm_date];
+				const contCompDate = contSettings[comp_date];
+
+				if (contCompDate < currDate || contCommDate > currDate) {
+					if (contCommDate > currDate) {
+						message += ` ${ops} will start on ${contCommDate}`;
+					}
+
+					if (contCompDate < currDate) {
+						message += ` ${ops} closed on ${contCompDate}`;
+					}
+
+					if (isEmpty(specialUnlock)) {
+						return res.status(403).json({
+							status: 'closed',
+							message: message
+						});
+					}
+				}
+			} else {
 				return res.status(403).json({
-					status: 'fail',
-					message: 'You have no access to this resource at this time.  ' + message
+					status: 'inactive',
+					message: ops + ' is not yet active'
+				});
+			}
+		} else {
+			const subContCommDate = subContSettings[comm_date];
+			const subContCompDate = subContSettings[comp_date];
+
+			if (subContCompDate < currDate || subContCommDate > currDate) {
+				if (subContCommDate > currDate) {
+					message += ` ${ops} will start on ${subContCommDate}`;
+				}
+
+				if (subContCompDate < currDate) {
+					message += ` ${ops} closed on ${subContCompDate}`;
+				}
+
+				if (isEmpty(specialUnlock)) {
+					return res.status(403).json({
+						status: 'closed',
+						message: message
+					});
+				}
+			}
+		}
+	} else {
+		const regionCommDate = regionSettings[comm_date];
+		const regionCompDate = regionSettings[comp_date];
+
+		if (regionCompDate < currDate || regionCommDate > currDate) {
+			if (regionCommDate > currDate) {
+				message += ` ${ops} will start on ${regionCommDate}`;
+			}
+
+			if (regionCompDate < currDate) {
+				message += ` ${ops} closed on ${regionCompDate}`;
+			}
+
+			if (isEmpty(specialUnlock)) {
+				return res.status(403).json({
+					status: 'closed',
+					message: message
 				});
 			}
 		}

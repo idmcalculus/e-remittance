@@ -8,29 +8,28 @@ config();
 
 Settings.defaultZone = process.env.TIMEZONE;
 
-const unlockChurch = asyncCatchInsert(async (req, res, _next) => {
+const insertSpecialUnlockData = asyncCatchInsert(async (req, res, _next) => {
 	const data = req.body;
 
-	let { parish_code, unlock_start_date, unlock_end_date, rem_month, rem_year } = data;
+	const { unlock_type, unlock_type_code, unlock_start_date, unlock_end_date, rem_month, rem_year } = data;
 
-	const foundSettingsData = await getDataFromDb(req, db('specially_unlocked_churches'), { parish_code, rem_month, rem_year });
+	if (unlock_end_date && (unlock_end_date < unlock_start_date)) {
+		return res.status(400).json({
+			status: 'Invalid dates',
+			message: 'The unlock end date cannot be before the unlock start date'
+		});
+	}
+
+	const foundSpecialUnlockData = await getDataFromDb(req, db('special_unlock'), { unlock_type, unlock_type_code, rem_month, rem_year });
 
 	let forcedEndDate = DateTime.fromISO(unlock_start_date).plus({ days: 3 }).toFormat('yyyy-MM-dd');
-	const daysInMonth = DateTime.fromISO(unlock_start_date).daysInMonth;
-	const lastMonthDay = DateTime.fromFormat(`${rem_month} ${daysInMonth}, ${rem_year}`, 'LLL dd, yyyy').toFormat('yyyy-MM-dd');
-
-	if (forcedEndDate > lastMonthDay) {
-		forcedEndDate = lastMonthDay
-	}
 
 	if (unlock_end_date == null || unlock_end_date == '' || unlock_end_date > forcedEndDate) {
-		unlock_end_date = forcedEndDate;
+		data['unlock_end_date'] = forcedEndDate;
 	}
 
-	data['unlock_end_date'] = unlock_end_date;
-
-	if (foundSettingsData) {
-		const updateSpeciallyUnlocked = await updateDb(db('specially_unlocked_churches'), data, { parish_code, rem_month, rem_year });
+	if (foundSpecialUnlockData) {
+		const updateSpeciallyUnlocked = await updateDb(db('special_unlock'), data, { id: foundSpecialUnlockData[0].id });
 
 		if (updateSpeciallyUnlocked) {
 			return res.status(200).json({
@@ -45,7 +44,7 @@ const unlockChurch = asyncCatchInsert(async (req, res, _next) => {
 			});
 		}
 	} else {
-		const insertSpeciallyUnlocked = await insertIntoDb(db('specially_unlocked_churches'), data);
+		const insertSpeciallyUnlocked = await insertIntoDb(db('special_unlock'), data);
 
 		if (insertSpeciallyUnlocked) {
 			return res.status(200).json({
@@ -61,13 +60,13 @@ const unlockChurch = asyncCatchInsert(async (req, res, _next) => {
 	}
 });
 
-const getUnlockedChurches = asyncCatchRegular(async(req, res, _next) => {
-	const unlockChurchesData = await getDataFromDb(req, db('specially_unlocked_churches'));
+const getSpecialUnlockData = asyncCatchRegular(async(req, res, _next) => {
+	const specialUnlockData = await getDataFromDb(req, db('special_unlock'));
 
-	if (unlockChurchesData) {
+	if (specialUnlockData) {
 		return res.status(200).json({
 			status: 'success',
-			data: unlockChurchesData
+			data: specialUnlockData
 		});
 	} else {
 		return res.status(400).json({
@@ -77,4 +76,4 @@ const getUnlockedChurches = asyncCatchRegular(async(req, res, _next) => {
 	}
 });
 
-export { unlockChurch, getUnlockedChurches };
+export { insertSpecialUnlockData, getSpecialUnlockData };

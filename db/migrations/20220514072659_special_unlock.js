@@ -6,15 +6,10 @@ const { onUpdateTrigger } = knexConfig;
  */
  export const up = async knex => {
 	try {
-		return knex.schema.createTable('specially_unlocked_churches', table => {
+		return knex.schema.createTable('special_unlock', table => {
 			table.increments('id').primary();
-			table.string('parish_code', 200).notNullable();
-			table.string('area_code', 30).notNullable();
-			table.string('zone_code', 30).notNullable();
-			table.string('prov_code', 30).notNullable();
-			table.string('reg_code', 30).notNullable();
-			table.string('sub_cont_code', 255).notNullable();
-			table.string('cont_code', 255).notNullable();
+			table.enum('unlock_type', ['parish', 'area', 'zone', 'province']).notNullable();
+			table.string('unlock_type_code').notNullable();
 			table.enum('rem_month', [
 				'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
 				'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
@@ -28,9 +23,9 @@ const { onUpdateTrigger } = knexConfig;
 			table.integer('r3').nullable();
 			table.timestamps(false, true);
 			table.timestamp('deleted_at').nullable();
-			table.unique(['parish_code', 'rem_month', 'rem_year']);
+			table.unique(['unlock_type', 'unlock_type_code', 'rem_month', 'rem_year']);
 		})
-		.raw(onUpdateTrigger('specially_unlocked_churches'));
+		.raw(onUpdateTrigger('special_unlock'));
 	} catch (error) {
 		console.error(error);
 	}
@@ -40,4 +35,4 @@ const { onUpdateTrigger } = knexConfig;
  * @param { import("knex").Knex } knex
  * @returns { Promise<void> }
  */
-export const down = knex => knex.schema.dropTable('specially_unlocked_churches');
+export const down = knex => knex.schema.dropTable('special_unlock');

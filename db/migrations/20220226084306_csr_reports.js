@@ -59,7 +59,6 @@ const { onUpdateTrigger } = knexConfig;
 			table.string('posted_by_name', 255).nullable();
 			table.timestamps(false, true);
 			table.timestamp('deleted_at').nullable();
-			table.unique(['parish_code', 'week', 'month', 'year', 'date_of_activity']);
 		})
 		.raw(onUpdateTrigger('csr_reports'));
 	} catch (error) {
@@ -67,4 +66,4 @@ const { onUpdateTrigger } = knexConfig;
 	}
 }
   
-export const down = knex => knex.schema.dropTable('csr_reports');
+export const down = knex => knex.schema.raw('DROP TABLE IF EXISTS csr_reports CASCADE');

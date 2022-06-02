@@ -6,13 +6,16 @@ const { onUpdateTrigger } = knexConfig;
  */
 export const up = async knex => {
 	try {
-		return knex.schema.createTable('settings_admin_report', table => {
+		return knex.schema.createTable('admin_settings_report', table => {
 			table.increments('id').primary();
+			table.enum('admin_type', ['region', 'sub_continent', 'continent']).notNullable();
+			table.string('admin_type_code').notNullable();
 			table.enum('rem_month', [
 				'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
 				'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
 			]).notNullable();
 			table.integer('rem_year').notNullable();
+			table.boolean('enforce_age_group_reporting').notNullable();
 			table.date('date_of_comm').notNullable();
 			table.date('date_of_comp').notNullable();
 			table.boolean('set_as_default').notNullable();
@@ -32,9 +35,9 @@ export const up = async knex => {
 			table.string('s3').nullable();
 			table.timestamps(false, true);
 			table.timestamp('deleted_at').nullable();
-			table.unique(['rem_month', 'rem_year']);
+			table.unique(['admin_type', 'admin_type_code', 'rem_month', 'rem_year']);
 		})
-		.raw(onUpdateTrigger('settings_admin_report'));
+		.raw(onUpdateTrigger('admin_settings_report'));
 	} catch (error) {
 		console.error(error);
 		return error;
@@ -45,4 +48,4 @@ export const up = async knex => {
  * @param { import("knex").Knex } knex
  * @returns { Promise<void> }
  */
-export const down = knex => knex.schema.dropTable('settings_admin_report');
+export const down = knex => knex.schema.dropTable('admin_settings_report');

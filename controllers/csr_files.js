@@ -16,6 +16,8 @@ const fileUpload = asyncCatchInsert(async (req, res, _next) => {
 
 	const {
 		report_id,
+		category_id,
+		sub_category_id,
 		month,
 		year,
 		parish_code,
@@ -35,6 +37,8 @@ const fileUpload = asyncCatchInsert(async (req, res, _next) => {
 		let imageData = {}
 
 		if (report_id) imageData.report_id = report_id;
+		if (category_id) imageData.category_id = category_id;
+		if (sub_category_id) imageData.sub_category_id = sub_category_id;
 		if (month) imageData.month = month;
 		if (year) imageData.year = year;
 		if (parish_code) imageData.parish_code = parish_code;
@@ -49,8 +53,8 @@ const fileUpload = asyncCatchInsert(async (req, res, _next) => {
 
 		imageData.file_name = file.originalname.split(' ').join('_');
 		imageData.file_size = formatBytes(file['size']);
-		imageData.file_key 	= file['key']
-		imageData.aws_bucket_url = process.env.AWS_BUCKET_URL
+		imageData.file_key 	= file['key'];
+		imageData.aws_bucket_url = process.env.AWS_BUCKET_URL;
 
 		if (_.has(officeTypes, file.mimetype.split('/')[1])) {
 			imageData.file_type = officeTypes[file.mimetype.split('/')[1]];
@@ -61,7 +65,7 @@ const fileUpload = asyncCatchInsert(async (req, res, _next) => {
 		data.push(imageData);
 	}
 
-	const result = await insertIntoDb(db('csr_images'), data);
+	const result = await insertIntoDb(db('csr_files'), data);
 
 	if (result) {
 		return res.status(200).json({ 
@@ -77,7 +81,7 @@ const fileUpload = asyncCatchInsert(async (req, res, _next) => {
 });
 
 const getCsrFiles = asyncCatchRegular(async (req, res, _next) => {
-	const csrReports = await getDataFromDb(req, db('csr_images'));
+	const csrReports = await getDataFromDb(req, db('csr_files'));
 
 	if (csrReports) {
 		for (let report of csrReports) {

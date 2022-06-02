@@ -18,7 +18,7 @@ const csrImageUpload = (req, res, next) => {
 			},
 			key: function (req, file, cb) {
 				let file_name = file.originalname.split(' ').join('_');
-				cb(null, `csr_images/${uuid()}-${file_name}`);
+				cb(null, `source_doc/csr/${uuid()}-${file_name}`);
 			}
 		})
 	}).array('file', 10);
@@ -62,7 +62,7 @@ const sourceDocUpload = (req, res, next) => {
 			},
 			key: function (req, file, cb) {
 				let file_name = file.originalname.split(' ').join('_');
-				cb(null, `source_doc/${uuid()}-${file_name}`);
+				cb(null, `source_doc/attendance/${uuid()}-${file_name}`);
 			}
 		}),
 		fileFilter: fileFilter

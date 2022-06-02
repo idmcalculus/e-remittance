@@ -5,7 +5,7 @@ const { onUpdateTrigger } = knexConfig;
  * @returns { Promise<void> }
  */
  export const up = knex => {
-	return knex.schema.createTable('csr_images', table => {
+	return knex.schema.createTable('csr_files', table => {
 		table.increments('id').primary();
 		table.integer('report_id')
 			.notNullable()
@@ -13,6 +13,20 @@ const { onUpdateTrigger } = knexConfig;
 			.index()
 			.references('id')
 			.inTable('csr_reports')
+			.onDelete('CASCADE');
+		table.integer('category_id')
+			.notNullable()
+			.unsigned()
+			.index()
+			.references('id')
+			.inTable('csr_categories')
+			.onDelete('CASCADE');
+		table.integer('sub_category_id')
+			.notNullable()
+			.unsigned()
+			.index()
+			.references('id')
+			.inTable('csr_sub_categories')
 			.onDelete('CASCADE');
 		table.enum('month', [
 			'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
@@ -36,7 +50,7 @@ const { onUpdateTrigger } = knexConfig;
 		table.timestamps(false, true);
 		table.timestamp('deleted_at').nullable();
 	})
-	.raw(onUpdateTrigger('csr_images'));
+	.raw(onUpdateTrigger('csr_files'));
 }
   
-export const down = knex => knex.schema.dropTable('csr_images');
+export const down = knex => knex.schema.dropTable('csr_files');

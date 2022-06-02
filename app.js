@@ -15,9 +15,10 @@ import csrRouter from './routes/csr_reports.js';
 import serviceRouter from './routes/services.js';
 import csrCategoryRouter from './routes/csr_categories.js';
 import csrSubCategoryRouter from './routes/csr_sub_categories.js';
-import csrImagesRouter from './routes/csr_images.js';
+import csrImagesRouter from './routes/csr_files.js';
 import adminSettingsRouter from './routes/admin_settings.js';
-import speciallyUnlockedRouter from './routes/specially_unlocked.js';
+import speciallyUnlockedRouter from './routes/special_unlock.js';
+import hgsAttRouter from './routes/hgs_att.js';
 
 config();
 let app = express();
@@ -52,6 +53,7 @@ app.use('/csr_sub_categories', csrSubCategoryRouter);
 app.use('/csr_image', csrImagesRouter);
 app.use('/admin_settings', adminSettingsRouter);
 app.use('/special_unlock', speciallyUnlockedRouter);
+app.use('/hgs_att', hgsAttRouter);
 
 // catch 404 and forward to error handler
 app.use(function(_req, _res, next) {

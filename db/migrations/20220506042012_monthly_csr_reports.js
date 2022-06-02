@@ -38,17 +38,18 @@ const { onUpdateTrigger } = knexConfig;
 			table.integer('num_activity').notNullable();
 			table.float('expenditure').notNullable();
 			table.float('csr_offering').nullable();
-			table.integer('beneficiaries', 255).notNullable();
-			table.integer('souls', 255).notNullable();
-			table.integer('num_lga', 255).notNullable();
-			table.integer('num_state', 255).notNullable();
-			table.integer('num_country', 255).notNullable();
+			table.integer('beneficiaries').notNullable();
+			table.integer('souls').notNullable();
+			table.float('income_utilization').notNullable();
+			table.integer('num_lga').notNullable();
+			table.integer('num_state').notNullable();
+			table.integer('num_country').notNullable();
 			table.timestamps(false, true);
 			table.timestamp('deleted_at').nullable();
 		})
 		.raw(onUpdateTrigger('monthly_csr_reports'));
 	} catch (error) {
-		console.error(error)
+		console.error(error);
 	}
 }
   

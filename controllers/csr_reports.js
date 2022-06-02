@@ -3,26 +3,40 @@ import isEmpty from 'lodash/isEmpty.js';
 import isArray from 'lodash/isArray.js';
 import _ from 'lodash';
 import { insertIntoDb, getDataFromDb, updateDb, deleteFromDb } from '../utils/dbOps.js';
-import { asyncCatchRegular, insertOpsHelper, updateOpsHelper } from '../utils/helpers.js';
+import { asyncCatchInsert, asyncCatchRegular, insertOpsHelper, updateOpsHelper } from '../utils/helpers.js';
+import { getQueryData } from '../utils/getQueryData.js';
 
 const getCsrReport = asyncCatchRegular(async (req, res, _next) => {
+	const { query_data, limitNum, pageNum, sortBy, sortOrder } = getQueryData(req);
+
 	const modifyReports = async report => {
-		const csr_files = await getDataFromDb(req, db('csr_images'), { report_id: report.id });
+		const csrFiles = await getDataFromDb(req, db('csr_files'), { report_id: report.id });
 		
-		if (csr_files) {
-			for (let csr_file of csr_files) {
-				const file_key = csr_file.file_key
+		if (csrFiles) {
+			for (let csrFile of csrFiles) {
+				const file_key = csrFile.file_key
 				const file_path = `${process.env.AWS_BUCKET_URL}/${file_key}`;
-				csr_file['file_path'] = file_path;
+				csrFile['file_path'] = file_path;
 			}
 
-			report['csr_files'] = csr_files;
+			report['csr_files'] = csrFiles;
+			report['num_files'] = csrFiles.length;
+		} else {
+			report['csr_files'] = [];
+			report['num_files'] = 0
 		}
 
 		return report;
 	}
 
-	const reports = await getDataFromDb(req, db('csr_reports'));
+	const reports = await db('csr_reports')
+						.select('csr_reports.*', 'csr_categories.cat_name', 'csr_sub_categories.sub_cat_name')
+						.join('csr_categories', 'csr_reports.category_id', 'csr_categories.id')
+						.join('csr_sub_categories', 'csr_reports.sub_category_id', 'csr_sub_categories.id')
+						.where(query_data)
+						.orderBy(sortBy, sortOrder)
+						.limit(limitNum)
+						.offset(pageNum * limitNum);
 
 	if (reports) {
 		const addFilesToReport = reports.map(modifyReports);
@@ -41,18 +55,46 @@ const getCsrReport = asyncCatchRegular(async (req, res, _next) => {
 	}
 });
 
-const createCsrReport = async (req, res, _next) => {
+const createCsrReport = asyncCatchInsert(async (req, res, _next) => {
 	const data = req.body;
 
-	const { parish_code, date_of_activity, week, month, year } = data;
-	
-	const foundCsrReport = await getDataFromDb(req, db('csr_reports'), { parish_code, date_of_activity, week, month, year });
+	const { parish_code, month, year, sub_category_id } = data;
 
 	const foundMonthlyReport = await getDataFromDb(req, db('monthly_csr_reports'), {
+		sub_category_id: sub_category_id,
 		parish_code: parish_code,
 		month: month,
 		year: year
 	});
+
+	const csrMonthlyData = await computeMonthlyData(req, data, 'insert');
+
+	if (isEmpty(csrMonthlyData) || csrMonthlyData.error) {
+		return res.status(400).json({
+			status: 'error',
+			message: 'Error inserting monthly data.'
+		});
+	}
+
+	if (foundMonthlyReport) {
+		// if report data for this month exists, update
+		const updateMonthlyReportData = await updateDb(db('monthly_csr_reports'), csrMonthlyData, { id: foundMonthlyReport[0].id });
+		await insertOpsHelper(insertIntoDb, updateMonthlyReportData, db('csr_reports'), data, res);
+	} else {
+		// if csr Report for this month does not exist, create
+		const insertMonthlyReportData = await insertIntoDb(db('monthly_csr_reports'), csrMonthlyData);
+		await insertOpsHelper(insertIntoDb, insertMonthlyReportData, db('csr_reports'), data, res);
+	}
+})
+
+const updateCsrReport = async (req, res, _next) => {
+	const data = req.body;
+
+	const { id } = req.params;
+
+	const foundCsrReport = await getDataFromDb(req, db('csr_reports'), { id });
+
+	const foundMonthlyReport = await getDataFromDb(req, db('monthly_csr_reports'), { id });
 
 	if (foundCsrReport) {
 		const csrMonthlyData = await computeMonthlyData(req, data, 'update');
@@ -74,24 +116,10 @@ const createCsrReport = async (req, res, _next) => {
 			await updateOpsHelper(updateDb, insertMonthlyReportData, db('csr_reports'), data, { id: foundCsrReport[0].id }, res);
 		}
 	} else {
-		const csrMonthlyData = await computeMonthlyData(req, data, 'insert');
-
-		if (isEmpty(csrMonthlyData) || csrMonthlyData.error) {
-			return res.status(400).json({
-				status: 'error',
-				message: 'Error inserting monthly data.'
-			});
-		}
-
-		if (foundMonthlyReport) {
-			// if report data for this month exists, update
-			const updateMonthlyReportData = await updateDb(db('monthly_csr_reports'), csrMonthlyData, { id: foundMonthlyReport[0].id });
-			await insertOpsHelper(insertIntoDb, updateMonthlyReportData, db('csr_reports'), data, res);
-		} else {
-			// if csr Report for this month does not exist, create
-			const insertMonthlyReportData = await insertIntoDb(db('monthly_csr_reports'), csrMonthlyData);
-			await insertOpsHelper(insertIntoDb, insertMonthlyReportData, db('csr_reports'), data, res);
-		}
+		return res.status(404).json({
+			status: 'fail',
+			message: 'No data found'
+		});
 	}
 }
 
@@ -198,6 +226,7 @@ const computeMonthlyData = async (req, csrData, ops) => {
 		monthlyData['num_state']		= num_state;
 		monthlyData['num_country']		= num_country;
 		monthlyData['num_activity']		= num_activity;
+		monthlyData['income_utilization']	= csr_offering - expenditure;
 
 		return monthlyData;
 	} catch (error) {
@@ -256,15 +285,31 @@ const deleteCsrReport = asyncCatchRegular(async (req, res, _next) => {
 });
 
 const getMonthlyReport = asyncCatchRegular(async (req, res, _next) => {
-	const monthlyReport = await getDataFromDb(req, db('monthly_csr_reports'));
+	const { query_data, limitNum, pageNum, sortBy, sortOrder } = getQueryData(req);
+	const monthlyReport = await db('monthly_csr_reports')
+							.select('monthly_csr_reports.*', 'csr_categories.cat_name as category_name', 'csr_sub_categories.sub_cat_name as sub_category_name')
+							.join('csr_categories', 'csr_categories.id', 'monthly_csr_reports.category_id')
+							.join('csr_sub_categories', 'csr_sub_categories.id', 'monthly_csr_reports.sub_category_id')
+							.where(query_data)
+							.orderBy(sortBy, sortOrder)
+							.limit(limitNum)
+							.offset(pageNum * limitNum);
 
 	if (monthlyReport) {
 		const modifyReports = async report => {
-			const { month, year } = report;
-			let csrFiles = await getDataFromDb(req, db('csr_images'), { month, year});
+			const { category_id, sub_category_id, parish_code, month, year } = report;
+			let csrFiles = await getDataFromDb(req, db('csr_files'), { category_id, sub_category_id, parish_code, month, year});
 			if (csrFiles) {
+			    for (let csrFile of csrFiles) {
+    				const file_key = csrFile.file_key
+    				const file_path = `${process.env.AWS_BUCKET_URL}/${file_key}`;
+    				csrFile['file_path'] = file_path;
+    			}
+    			
+				report['csr_files'] = csrFiles;
 				report['num_files'] = csrFiles.length;
 			} else {
+				report['csr_files'] = [];
 				report['num_files'] = 0
 			}
 			
@@ -287,9 +332,207 @@ const getMonthlyReport = asyncCatchRegular(async (req, res, _next) => {
 	}
 });
 
+const getMonthlyReportByCategory = asyncCatchRegular(async (req, res, _next) => {
+	const { category_id, parish_code, month, year } = req.query;
+
+	const queryData = { category_id, parish_code, month, year };
+
+	const csrComputableItemsObj = {
+		expenditure: 'expenditure', 
+		csr_offering: 'csr_offering',
+		beneficiaries: 'beneficiaries',
+		souls: 'souls',
+		num_lga: 'num_lga',
+		num_state: 'num_state',
+		num_country: 'num_country',
+		num_activity: 'num_activity'
+	};
+
+	const defaultCsrCols = [
+		'category_id', 'parish_code', 'area_code', 'zone_code', 'prov_code', 'reg_code', 'sub_cont_code', 'cont_code', 'month', 'year'
+	];
+
+	const monthlyCatSum = await db('monthly_csr_reports')
+							.select('monthly_csr_reports.category_id', 'csr_categories.cat_name')
+							.join('csr_categories', 'csr_categories.id', 'monthly_csr_reports.category_id')
+							.sum(csrComputableItemsObj)
+							.where(queryData)
+							.groupBy('monthly_csr_reports.category_id', 'csr_categories.cat_name');
+	
+	let csrFiles = await getDataFromDb(req, db('csr_files'), queryData);
+
+	const monthlyCatData = {};
+
+	for (let col of defaultCsrCols) {
+		const data = await db('monthly_csr_reports').where(queryData).select(col).first();
+		monthlyCatData[col] = data[col];
+	}
+
+	for (let col in csrComputableItemsObj) {
+		monthlyCatData[col] = monthlyCatSum[0][col];
+	}
+	
+	if (csrFiles) {
+	    for (let csrFile of csrFiles) {
+			const file_key = csrFile.file_key
+			const file_path = `${process.env.AWS_BUCKET_URL}/${file_key}`;
+			csrFile['file_path'] = file_path;
+		}
+		
+		monthlyCatData['csr_files'] = csrFiles;
+		monthlyCatData['num_files'] = csrFiles.length;
+	} else {
+		monthlyCatData['csr_files'] = [];
+		monthlyCatData['num_files'] = 0
+	}
+
+	return res.status(200).json({
+		status: 'success',
+		data: monthlyCatData
+	});
+});
+
+const getParishCsrReport = asyncCatchRegular (async (req, res, _next) => {
+
+	const { parish_code, month, year } = req.query;
+
+    const modifyWeeklyReports = async report => {
+		const csrFiles = await getDataFromDb(req, db('csr_files'), { report_id: report.id });
+		
+		if (csrFiles) {
+			for (let csrFile of csrFiles) {
+				const file_key = csrFile.file_key
+				const file_path = `${process.env.AWS_BUCKET_URL}/${file_key}`;
+				csrFile['file_path'] = file_path;
+			}
+
+			report['csr_files'] = csrFiles;
+		    report['num_files'] = csrFiles.length;
+		} else {
+			report['csr_files'] = [];
+			report['num_files'] = 0
+		}
+
+		return report;
+	}
+	
+	const modifyMonthlyReports = async report => {
+		const { category_id, sub_category_id, parish_code, month, year } = report;
+		let csrFiles = await getDataFromDb(req, db('csr_files'), { category_id, sub_category_id, parish_code, month, year});
+		if (csrFiles) {
+		    for (let csrFile of csrFiles) {
+				const file_key = csrFile.file_key
+				const file_path = `${process.env.AWS_BUCKET_URL}/${file_key}`;
+				csrFile['file_path'] = file_path;
+			}
+			
+			report['csr_files'] = csrFiles;
+			report['num_files'] = csrFiles.length;
+		} else {
+			report['csr_files'] = [];
+			report['num_files'] = 0
+		}
+		
+		return report
+	};
+
+	const csrComputableItemsObj = {
+		expenditure: 'expenditure', 
+		csr_offering: 'csr_offering',
+		beneficiaries: 'beneficiaries',
+		souls: 'souls',
+		num_lga: 'num_lga',
+		num_state: 'num_state',
+		num_country: 'num_country',
+		num_activity: 'num_activity'
+	};
+
+	const defaultCsrCols = [
+		'parish_code', 'area_code', 'zone_code', 'prov_code', 'reg_code', 'sub_cont_code', 'cont_code', 'month', 'year'
+	];
+
+	const weeklyReports = await db('csr_reports')
+							.select('csr_reports.*', 'csr_categories.cat_name as category_name', 'csr_sub_categories.sub_cat_name as sub_category_name')
+							.join('csr_categories', 'csr_categories.id', 'csr_reports.category_id')
+							.join('csr_sub_categories', 'csr_sub_categories.id', 'csr_reports.sub_category_id')
+							.where({ parish_code, month, year });
+
+
+	const monthlyReport = await db('monthly_csr_reports')
+							.select('monthly_csr_reports.*', 'csr_categories.cat_name as category_name', 'csr_sub_categories.sub_cat_name as sub_category_name')
+							.join('csr_categories', 'csr_categories.id', 'monthly_csr_reports.category_id')
+							.join('csr_sub_categories', 'csr_sub_categories.id', 'monthly_csr_reports.sub_category_id')
+							.where({ parish_code, month, year });
+
+	const monthlyCatSum = await db('monthly_csr_reports')
+							.select('monthly_csr_reports.category_id', 'csr_categories.cat_name')
+							.join('csr_categories', 'csr_categories.id', 'monthly_csr_reports.category_id')
+							.sum(csrComputableItemsObj)
+							.where({ parish_code, month, year })
+							.groupBy('monthly_csr_reports.category_id', 'csr_categories.cat_name');
+
+	const monthlyReportByCategories = [];
+
+	for (let monthlyCat of monthlyCatSum) {
+		const { category_id, cat_name } = monthlyCat;
+
+		let csrFiles = await getDataFromDb(req, db('csr_files'), { category_id, parish_code, month, year });
+
+		const monthlyCatData = {};
+
+		monthlyCatData['category_name'] = cat_name;
+		monthlyCatData['category_id'] = category_id;
+
+		for (let col of defaultCsrCols) {
+			const data = await db('monthly_csr_reports').where({ category_id, parish_code, month, year }).select(col).first();
+			monthlyCatData[col] = data[col];
+		}
+
+		for (let col in csrComputableItemsObj) {
+			monthlyCatData[col] = monthlyCatSum[0][col];
+		}
+		
+		if (csrFiles) {
+			for (let csrFile of csrFiles) {
+				const file_key = csrFile.file_key
+				const file_path = `${process.env.AWS_BUCKET_URL}/${file_key}`;
+				csrFile['file_path'] = file_path;
+			}
+			
+			monthlyCatData['csr_files'] = csrFiles;
+			monthlyCatData['num_files'] = csrFiles.length;
+		} else {
+			monthlyCatData['csr_files'] = [];
+			monthlyCatData['num_files'] = 0
+		}
+
+		monthlyReportByCategories.push(monthlyCatData);
+	}
+
+	if (weeklyReports && monthlyReport) {
+	    const addFilesToWeeklyReport = weeklyReports.map(modifyWeeklyReports);
+		const addFilesToMonthlyReport = monthlyReport.map(modifyMonthlyReports);
+
+		const weeklyCsrReports = await Promise.all(addFilesToWeeklyReport);
+		const monthlyCsrReports = await Promise.all(addFilesToMonthlyReport);
+		
+		return res.status(200).json({
+			status: 'success', weeklyCsrReports, monthlyCsrReports, monthlyReportByCategories
+		});
+	} else {
+		return res.status(404).json({
+			status: 'fail',
+			message: 'No data found'
+		});
+	}
+});
+
 export { 
 	getCsrReport, 
 	createCsrReport,
+	updateCsrReport,
 	deleteCsrReport,
-	getMonthlyReport
+	getMonthlyReport,
+	getMonthlyReportByCategory,
+	getParishCsrReport
 };

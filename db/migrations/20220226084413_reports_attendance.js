@@ -32,6 +32,15 @@ const { onUpdateTrigger } = knexConfig;
 			table.integer('men').defaultTo(0);
 			table.integer('women').defaultTo(0);
 			table.integer('children').defaultTo(0);
+			table.integer('adult_men').defaultTo(0);
+			table.integer('adult_women').defaultTo(0);
+			table.integer('youth_men').defaultTo(0);
+			table.integer('youth_women').defaultTo(0);
+			table.integer('teenagers').defaultTo(0);
+			table.integer('youngstars').defaultTo(0);
+			table.integer('total_adults').defaultTo(0);
+			table.integer('total_youths').defaultTo(0);
+			table.integer('total_att').defaultTo(0);
 			table.integer('marriages').defaultTo(0);
 			table.integer('births').defaultTo(0);
 			table.integer('demises').defaultTo(0);
@@ -47,6 +56,8 @@ const { onUpdateTrigger } = knexConfig;
 			table.integer('asst_pastors').defaultTo(0);
 			table.integer('full_pastors').defaultTo(0);
 			table.integer('dcns').defaultTo(0);
+			table.integer('workers_at_lgaf').defaultTo(0);
+			table.integer('souls_at_lgaf').defaultTo(0);
 			table.integer('comp').nullable();
 			table.integer('status').nullable();
 			table.string('rem_by', 30).nullable();
@@ -58,7 +69,6 @@ const { onUpdateTrigger } = knexConfig;
 			table.timestamp('deleted_at').nullable();
 			table.unique(['service_id', 'parish_code', 'week', 'month', 'year']);
 		})
-		.raw('ALTER TABLE reports_att ADD COLUMN total_mwc integer GENERATED ALWAYS AS (men + women + children) STORED;')
 		.raw(onUpdateTrigger('reports_att'));
 	} catch (error) {
 		console.error(error);
@@ -69,4 +79,4 @@ const { onUpdateTrigger } = knexConfig;
  * @param { import("knex").Knex } knex
  * @returns { Promise<void> }
  */
-export const down = knex => knex.schema.dropTable('reports_att');
+export const down = knex => knex.schema.raw('DROP TABLE IF EXISTS reports_att CASCADE');
