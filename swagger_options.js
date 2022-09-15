@@ -21,5 +21,5 @@ export const options = {
 			},
 		],
 	},
-	apis: ['./routes/*.js'],
+	apis: ['./routes/*.js', './swagger_components/*.js'],
 }; 

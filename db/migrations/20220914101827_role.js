@@ -7,17 +7,18 @@ const { onUpdateTrigger } = knexConfig;
  */
  export const up = async knex => {
 	try {
-		return knex.schema.createTable('services', table => {
+		return knex.schema.createTable('roles', table => {
 			table.increments('id').primary();
-			table.string('service_name', 200).notNullable();
-			table.string('service_name_slug', 200).notNullable();
+			table.string('role_name', 200).nullable();
+			table.string('role_name_slug', 200).nullable();
+			table.string('role_description').nullable();
 			table.timestamps(false, true);
 			table.timestamp('deleted_at').nullable();
-			table.unique(['service_name', 'service_name_slug']);
+			table.unique(['role_name', 'role_name_slug']);
 		})
-		.raw(onUpdateTrigger('services'));
+		.raw(onUpdateTrigger('roles'));
 	} catch (error) {
-		console.error(error)
+		console.error(error);
 	}
 }
 
@@ -25,4 +26,4 @@ const { onUpdateTrigger } = knexConfig;
  * @param { import("knex").Knex } knex
  * @returns { Promise<void> }
  */
-export const down = knex => knex.schema.raw('DROP TABLE IF EXISTS services CASCADE');
+export const down = knex => knex.schema.raw('DROP TABLE IF EXISTS roles CASCADE');

@@ -1,13 +1,15 @@
 import { config } from 'dotenv';
+import jwt from 'jsonwebtoken';
 import db from '../services/db.js';
 import isEmpty from 'lodash/isEmpty.js';
+import isEqual from 'lodash/isEqual.js';
+import isArray from 'lodash/isArray.js';
 import { getQueryData } from '../utils/getQueryData.js';
-import { insertIntoDb, getDataFromDb, updateDb, deleteFromDb } from '../utils/dbOps.js';
-import { asyncCatchInsert, asyncCatchRegular, insertOpsHelper, updateOpsHelper } from '../utils/helpers.js';
+import { getDataFromDb, deleteFromDb } from '../utils/dbOps.js';
+import { asyncCatchInsert, asyncCatchRegular } from '../utils/helpers.js';
 
 config();
 
-// Get all attendance reports or specific ones based on query parameters
 const getAttendance = asyncCatchRegular(async (req, res, _next) => {
 	const modifyReports = async report => {
 		const source_doc = await getDataFromDb(req, db('source_docs'), { report_att_id: report.id });
@@ -52,102 +54,75 @@ const getAttendance = asyncCatchRegular(async (req, res, _next) => {
 const createAttendance = asyncCatchInsert(async (req, res, _next) => {
 	const data = req.body;
 
-	const { service_id, parish_code, week, month, year, men, women, children, adult_men, adult_women, youth_men, youth_women, teenagers, youngstars } = data;
+	let token = process.env.TOKEN;
+	console.log(jwt.decode(token));
 
-	if (men == undefined && women == undefined && children == undefined) {
-		data['men'] = adult_men + youth_men;
-		data['women'] = adult_women + youth_women;
-		data['children'] = teenagers + youngstars;
+	if (isArray(data)) {
+		for (const elem of data) {
+			const {men, women, children, adult_men, adult_women, youth_men, youth_women, teenagers, youngstars } = elem;
 
-		const totalAdults = adult_men + adult_women;
-		const totalYouths = youth_men + youth_women;
-		const totalAtt = totalAdults + totalYouths + teenagers + youngstars;
+			if (men == undefined && women == undefined && children == undefined) {
+				elem['men'] = adult_men + youth_men;
+				elem['women'] = adult_women + youth_women;
+				elem['children'] = teenagers + youngstars;
 
-		data['total_adults'] = totalAdults;
-		data['total_youths'] = totalYouths;
-		data['total_att'] = totalAtt;
-	} else {
-		data['total_att'] = men + women + children;
+				const totalAdults = adult_men + adult_women;
+				const totalYouths = youth_men + youth_women;
+				const totalAtt = totalAdults + totalYouths + teenagers + youngstars;
+
+				elem['total_adults'] = totalAdults;
+				elem['total_youths'] = totalYouths;
+				elem['total_att'] = totalAtt;
+			} else {
+				elem['total_att'] = men + women + children;
+			}
+		}
 	}
 
-	const foundAttendanceData = await getDataFromDb(req, db('reports_att'), { service_id, parish_code, week, month, year });
+	let monthlyAttData = await computeMonthlyData(data);
 
-	const foundMonthlyAtt = await getDataFromDb(req, db('reports_att_monthly'), {
-		service_id: service_id,
-		parish_code: parish_code,
-		month: month,
-		year: year
-	});
-
-	// if attendance exists, update
-	if (foundAttendanceData) {
-		const monthlyAttData = await computeMonthlyData(req, data, 'update');
-
-		if (isEmpty(monthlyAttData) || monthlyAttData.error) {
-			return res.status(400).json({
-				status: 'error',
-				message: 'Error updating monthly data.'
-			});
-		}
-		
-		if (foundMonthlyAtt) {
-			// if attendance for this month exists, update
-			const updateMonthlyAttData = await updateDb(db('reports_att_monthly'), monthlyAttData, { id: foundMonthlyAtt[0].id });
-			await updateOpsHelper(updateDb, updateMonthlyAttData, db('reports_att'), data, { id: foundAttendanceData[0].id }, res);
-		} else {
-			// if attendance for this month does not exist, create
-			const createMonthlyAttData = insertIntoDb(db('reports_att_monthly'), monthlyAttData);
-			await updateOpsHelper(updateDb, createMonthlyAttData, db('reports_att'), data, { id: foundAttendanceData[0].id }, res);
-		}
+	if (isEmpty(monthlyAttData) || monthlyAttData.error) {
+		return res.status(400).json({
+			status: 'error',
+			message: monthlyAttData.error || 'No monthly data returned'
+		});
 	} else {
-		const monthlyAttData = await computeMonthlyData(req, data, 'insert');
+		let insertedMonthlyData = await db('reports_att_monthly')
+									.insert(monthlyAttData)
+									.onConflict(['service_id', 'parish_code', 'month', 'year'])
+									.merge()
+									.returning('*');
 
-		if (isEmpty(monthlyAttData) || monthlyAttData.error) {
+		if (insertedMonthlyData.length > 0) {
+			let insertedData = await db('reports_att')
+								.insert(data)
+								.onConflict(['service_id', 'parish_code', 'week', 'month', 'year'])
+								.merge()
+								.returning('*');
+
+			if (insertedData.length > 0) {
+				return res.status(201).json({
+					status: 'success',
+					message: 'data inserted/updated successfully',
+					data: insertedData
+				});
+			} else {
+				return res.status(400).json({
+					status: 'error',
+					message: 'Error inserting/updating data.'
+				});
+			}
+		} else {
 			return res.status(400).json({
 				status: 'error',
-				message: 'Error inserting monthly data.'
+				message: 'Error inserting/updating monthly data.'
 			});
-		}
-
-		if (foundMonthlyAtt) {
-			// if attendance for this month exists, update
-			const updateMonthlyAttData = await updateDb(db('reports_att_monthly'), monthlyAttData, { id: foundMonthlyAtt[0].id });
-			await insertOpsHelper(insertIntoDb, updateMonthlyAttData, db('reports_att'), data, res);
-		} else {
-			// if attendance for this month does not exist, create
-			const insertMonthlyAttData = await insertIntoDb(db('reports_att_monthly'), monthlyAttData);
-			await insertOpsHelper(insertIntoDb, insertMonthlyAttData, db('reports_att'), data, res);
 		}
 	}
 });
 
-const computeMonthlyData = async (req, attendanceData, ops) => {
-	try {
-		const defaultAttQuery = {
-			service_id: attendanceData['service_id'],
-			parish_code: attendanceData['parish_code'],
-			month: attendanceData['month'],
-			year: attendanceData['year']
-		};
-
-		const furtherReportQuery = {
-			parish_code: attendanceData['parish_code'],
-			month: attendanceData['month'],
-			year: attendanceData['year']
-		};
-
-		const peopleObj = {
-			men: 'men',
-			women: 'women',
-			children: 'children',
-			adult_men: 'adult_men', 
-			adult_women: 'adult_women',
-			youth_men: 'youth_men', 
-			youth_women: 'youth_women',
-			teenagers: 'teenagers',
-			youngstars: 'youngstars'
-		};
-
+const computeMonthlyData = async (data) => {
+	try	{
 		const furtherReportObj = {
 			marriages: 'marriages', 
 			births: 'births',
@@ -173,42 +148,29 @@ const computeMonthlyData = async (req, attendanceData, ops) => {
 		];
 
 		const monthlyData = {};
-	
-		const weeksCount = await db('reports_att').count('week').where(defaultAttQuery);
 
-		let monthlySum, numWeeks;
-	
-		if (ops === 'insert') {
-			monthlySum = await db('reports_att').sum(peopleObj).where(defaultAttQuery);
-			numWeeks = Number(weeksCount[0].count) + 1;
+		let men = 0,
+			women = 0,
+			children = 0,
+			adultMen = 0, 
+			adultWomen = 0,
+			youthMen = 0, 
+			youthWomen = 0,
+			teenagers = 0,
+			youngstars = 0,
+			numWeeks = data.length;
+
+		for (const elem of data) {
+			men += elem['men'] !== undefined ? Number(elem['men']) : 0;
+			women += elem['women'] !== undefined ? Number(elem['women']) : 0;
+			children += elem['children'] !== undefined ? Number(elem['children']) : 0;
+			adultMen += elem['adult_men'] !== undefined ? Number(elem['adult_men']) : 0;
+			adultWomen += elem['adult_women'] !== undefined ? Number(elem['adult_women']) : 0;
+			youthMen += elem['youth_men'] !== undefined ? Number(elem['youth_men']) : 0;
+			youthWomen += elem['youth_women'] !== undefined ? Number(elem['youth_women']) : 0;
+			teenagers += elem['teenagers'] !== undefined ? Number(elem['teenagers']) : 0;
+			youngstars += elem['youngstars'] !== undefined ? Number(elem['youngstars']) : 0;
 		}
-
-		if (ops === 'update') {
-			const dbData = await getDataFromDb(req, db('reports_att'), {
-				service_id: attendanceData['service_id'],
-				parish_code: attendanceData['parish_code'],
-				week: attendanceData['week'],
-				month: attendanceData['month'],
-				year: attendanceData['year'],
-				service_date: attendanceData['service_date']
-			});
-
-			monthlySum = await db('reports_att')
-								.sum(peopleObj)
-								.where(defaultAttQuery)
-								.andWhereNot({id: dbData[0].id});
-			numWeeks = Number(weeksCount[0].count);
-		}
-
-		const men 			= (monthlySum.length > 0 ? Number(monthlySum[0]['men']) : 0) + (attendanceData['men'] ? attendanceData['men'] : 0);
-		const women 		= (monthlySum.length > 0 ? Number(monthlySum[0]['women']) : 0) + (attendanceData['women'] ? attendanceData['women'] : 0);
-		const children 		= (monthlySum.length > 0 ? Number(monthlySum[0]['children']) : 0) + (attendanceData['children'] ? attendanceData['children'] : 0);
-		const adultMen 		= (monthlySum.length > 0 ? Number(monthlySum[0]['adult_men']) : 0) + (attendanceData['adult_men'] ? attendanceData['adult_men'] : 0);
-		const adultWomen 	= (monthlySum.length > 0 ? Number(monthlySum[0]['adult_women']) : 0) + (attendanceData['adult_women'] ? attendanceData['adult_women'] : 0);
-		const youthMen 		= (monthlySum.length > 0 ? Number(monthlySum[0]['youth_men']) : 0) + (attendanceData['youth_men'] ? attendanceData['youth_men'] : 0);
-		const youthWomen 	= (monthlySum.length > 0 ? Number(monthlySum[0]['youth_women']) : 0) + (attendanceData['youth_women'] ? attendanceData['youth_women'] : 0);
-		const teenagers 	= (monthlySum.length > 0 ? Number(monthlySum[0]['teenagers']) : 0) + (attendanceData['teenagers'] ? attendanceData['teenagers'] : 0);
-		const youngstars 	= (monthlySum.length > 0 ? Number(monthlySum[0]['youngstars']) : 0) + (attendanceData['youngstars'] ? attendanceData['youngstars'] : 0);
 
 		const totalAdults = adultMen + adultWomen;
 		const totalYouths = youthMen + youthWomen;
@@ -227,15 +189,13 @@ const computeMonthlyData = async (req, attendanceData, ops) => {
 		const avgAdults = avgAdultMen + avgAdultWomen;
 		const avgYouths = avgYouthMen + avgYouthWomen;
 		const avgTotalAtt = avgMen + avgWomen + avgChildren;
-	
-		const furtherReportsMonthlySum = await db('reports_att').sum(furtherReportObj).where(furtherReportQuery);
 
 		for (let col of defaultAttColumns) {
-			monthlyData[col] = attendanceData[col];
+			monthlyData[col] = data[numWeeks - 1][col];
 		}
 
 		for (let value of Object.values(furtherReportObj)) {
-			monthlyData[value] = (furtherReportsMonthlySum.length > 0 ? Number(furtherReportsMonthlySum[0][value]) : 0) + (attendanceData[value] ? attendanceData[value] : 0);
+			monthlyData[value] = data[0][value] !== undefined ? data[0][value] : 0;
 		}
 
 		monthlyData['men'] 			= men;
@@ -262,7 +222,7 @@ const computeMonthlyData = async (req, attendanceData, ops) => {
 		monthlyData['avg_teenagers'] 	= avgTeenagers;
 		monthlyData['avg_youngstars'] 	= avgYoungstars;
 		monthlyData['avg_total'] 		= avgTotalAtt;
-	
+
 		return monthlyData;
 	} catch (error) {
 		console.error(error);
@@ -280,8 +240,10 @@ const deleteAttendance = asyncCatchRegular (async (req, res, _next) => {
 		parish_code,
 		area_code,
 		zone_code,
-		province_code,
-		region_code,
+		prov_code,
+		reg_code,
+		sub_cont_code,
+		cont_code,
 		week,
 		service_date,
 		month,
@@ -295,8 +257,10 @@ const deleteAttendance = asyncCatchRegular (async (req, res, _next) => {
 	if (parish_code) query.parish_code = parish_code;
 	if (area_code) query.area_code = area_code;
 	if (zone_code) query.zone_code = zone_code;
-	if (province_code) query.province_code = province_code;
-	if (region_code) query.region_code = region_code;
+	if (prov_code) query.prov_code = prov_code;
+	if (reg_code) query.reg_code = reg_code;
+	if (sub_cont_code) query.sub_cont_code = sub_cont_code;
+	if (cont_code) query.cont_code = cont_code;
 	if (week) query.week = week;
 	if (service_date) query.service_date = service_date;
 	if (month) query.month = month;
@@ -342,8 +306,45 @@ const getMonthlyAttendance = asyncCatchRegular (async (req, res, _next) => {
 });
 
 const getParishAttendance = asyncCatchRegular (async (req, res, _next) => {
+	// query_data = { parish_code, month, year }
 
 	const { query_data, pageNum, limitNum, sortBy, sortOrder } = getQueryData(req);
+
+	const { parish_code, month, year } = query_data;
+
+	const expectedQuery = {};
+
+	if (parish_code) expectedQuery.parish_code = parish_code;
+	if (month) expectedQuery.month = month;
+	if (year) expectedQuery.year = year;
+
+	if (!isEqual(expectedQuery, query_data)) {
+		return res.status(400).json({
+			status: 'fail',
+			message: 'Please provide valid query parameters'
+		});
+	}
+
+	if (!parish_code) {
+		return res.status(400).json({
+			status: 'fail',
+			message: 'Please provide a parish code in the query parameters'
+		});
+	}
+
+	if (!month) {
+		return res.status(400).json({
+			status: 'fail',
+			message: 'Please provide a month in the query parameters'
+		});
+	}
+
+	if (!year) {
+		return res.status(400).json({
+			status: 'fail',
+			message: 'Please provide a year in the query parameters'
+		});
+	}
 
 	const weeklyReports = await db('reports_att')
 							.select('reports_att.*', 'services.service_name')
@@ -378,7 +379,49 @@ const getMonthlyAttByChurchHierarchy = asyncCatchRegular (async (req, res, _next
 
 	const { query_data, pageNum, limitNum, sortBy, sortOrder } = getQueryData(req);
 
-	const { area_code, zone_code, prov_code, reg_code, sub_cont_code, cont_code } = query_data;
+	const { service_id, month, year, area_code, zone_code, prov_code, reg_code, sub_cont_code, cont_code } = query_data;
+
+	const expectedQuery = {};
+
+	if (service_id) expectedQuery.service_id = service_id;
+	if (month) expectedQuery.month = month;
+	if (year) expectedQuery.year = year;
+	if (area_code) expectedQuery.area_code = area_code;
+	if (zone_code) expectedQuery.zone_code = zone_code;
+	if (prov_code) expectedQuery.prov_code = prov_code;
+	if (reg_code) expectedQuery.reg_code = reg_code;
+	if (sub_cont_code) expectedQuery.sub_cont_code = sub_cont_code;
+	if (cont_code) expectedQuery.cont_code = cont_code;
+
+	console.log({ expectedQuery, query_data });
+	
+	if (!isEqual(expectedQuery, query_data)) {
+		return res.status(400).json({
+			status: 'fail',
+			message: 'Please provide valid query parameters'
+		});
+	}
+
+	if (!month) {
+		return res.status(400).json({
+			status: 'fail',
+			message: 'Please provide a month in the query parameters'
+		});
+	}
+
+	if (!year) {
+		return res.status(400).json({
+			status: 'fail',
+			message: 'Please provide a year in the query parameters'
+		});
+	}
+
+	if (!area_code && !zone_code && !prov_code && !reg_code && !sub_cont_code && !cont_code) {
+		return res.status(400).json({
+			status: 'fail',
+			message: 'One of area_code, zone_code, prov_code, reg_code, sub_cont_code or cont_code is required in the query parameters'
+		});
+	}
 
 	const peopleObj = {
 		men: 'men',
@@ -473,18 +516,6 @@ const getMonthlyAttByChurchHierarchy = asyncCatchRegular (async (req, res, _next
 		cont_code: 'cont_code',
 		month: 'month',
 		year: 'year'
-	} || {
-		service_id: 'service_id',
-		service_name: 'service_name',
-		parish_code: 'parish_code',
-		area_code: 'area_code',
-		zone_code: 'zone_code',
-		prov_code: 'prov_code',
-		reg_code: 'reg_code',
-		sub_cont_code: 'sub_cont_code',
-		cont_code: 'cont_code',
-		month: 'month',
-		year: 'year'
 	};
 
 	const monthlyAttReport = await db('reports_att_monthly')
@@ -541,7 +572,47 @@ const getMonthlyProgressReport = asyncCatchRegular (async (req, res, _next) => {
 
 	const { query_data, pageNum, limitNum, sortBy, sortOrder } = getQueryData(req);
 
-	const { parish_code, area_code, zone_code, prov_code, reg_code, sub_cont_code, cont_code, month } = query_data;
+	const { parish_code, area_code, zone_code, prov_code, reg_code, sub_cont_code, cont_code, month, year } = query_data;
+
+	const expectedQuery = {};
+
+	if (parish_code) expectedQuery.parish_code = parish_code;
+	if (area_code) expectedQuery.area_code = area_code;
+	if (zone_code) expectedQuery.zone_code = zone_code;
+	if (prov_code) expectedQuery.prov_code = prov_code;
+	if (reg_code) expectedQuery.reg_code = reg_code;
+	if (sub_cont_code) expectedQuery.sub_cont_code = sub_cont_code;
+	if (cont_code) expectedQuery.cont_code = cont_code;
+	if (month) expectedQuery.month = month;
+	if (year) expectedQuery.year = year;
+
+	if (!isEqual(expectedQuery, query_data)) {
+		return res.status(400).json({
+			status: 'fail',
+			message: 'Please provide valid query parameters'
+		});
+	}
+
+	if (!month) {
+		return res.status(400).json({
+			status: 'fail',
+			message: 'Please provide a month in the query parameters'
+		});
+	}
+
+	if (!year) {
+		return res.status(400).json({
+			status: 'fail',
+			message: 'Please provide a year in the query parameters'
+		});
+	}
+
+	if (!parish_code && !area_code && !zone_code && !prov_code && !reg_code && !sub_cont_code && !cont_code) {
+		return res.status(400).json({
+			status: 'fail',
+			message: 'One of parish_code, area_code, zone_code, prov_code, reg_code, sub_cont_code or cont_code is required in the query parameters'
+		});
+	}
 
 	const months = [ 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -700,7 +771,7 @@ const getMonthlyProgressReport = asyncCatchRegular (async (req, res, _next) => {
 								.where(prevMonthQuery)
 								.groupBy('reports_att_monthly.service_id', 'services.service_name');
 	
-	const monthlyData = monthlySum.map(item => {
+	let monthlyData = monthlySum.map(item => {
 		const newItem = {};
 		for (const report of monthlyAttReport) {
 			for (const report_key in report) {
@@ -721,7 +792,7 @@ const getMonthlyProgressReport = asyncCatchRegular (async (req, res, _next) => {
 		return newItem;
 	});
 
-	const prevMonthlyData = prevMonthlySum.map(item => {
+	let prevMonthlyData = prevMonthlySum.map(item => {
 		const newItem = {};
 		for (const report of prevMonthlyAttReport) {
 			for (const report_key in report) {
@@ -742,17 +813,8 @@ const getMonthlyProgressReport = asyncCatchRegular (async (req, res, _next) => {
 		return newItem;
 	});
 
-	const thisMonthAvg = monthlyData.find(item => (item.service_id === 1)) ? Number(monthlyData.find(item => (item.service_id === 1)).avg_total) : 0;
-	const prevMonthAvg = prevMonthlyData.find(item => (item.service_id === 1)) ? Number(prevMonthlyData.find(item => (item.service_id === 1)).avg_total) : 0;
-
-	const thisMonthMen = monthlyData.find(item => (item.service_id === 1)) ? Number(monthlyData.find(item => (item.service_id === 1)).avg_men) : 0;
-	const prevMonthMen = prevMonthlyData.find(item => (item.service_id === 1)) ? Number(prevMonthlyData.find(item => (item.service_id === 1)).avg_men) : 0;
-
-	const thisMonthWomen = monthlyData.find(item => (item.service_id === 1)) ? Number(monthlyData.find(item => (item.service_id === 1)).avg_women) : 0;
-	const prevMonthWomen = prevMonthlyData.find(item => (item.service_id === 1)) ? Number(prevMonthlyData.find(item => (item.service_id === 1)).avg_women) : 0;
-
-	const thisMonthChildren = monthlyData.find(item => (item.service_id === 1)) ? Number(monthlyData.find(item => (item.service_id === 1)).avg_children) : 0;
-	const prevMonthChildren = prevMonthlyData.find(item => (item.service_id === 1)) ? Number(prevMonthlyData.find(item => (item.service_id === 1)).avg_children) : 0;
+	const roundToTwo = num => +(Math.round(num + "e+2")  + "e-2");
+	const calculatePercentageDiff = (prev, current) => prev === 0 ? 0 : roundToTwo(((current - prev) / prev) * 100);
 
 	const thisMonthConverts = monthlyData.reduce((acc, item) => acc + Number(item.converts), 0);
 	const prevMonthConverts = prevMonthlyData.reduce((acc, item) => acc + Number(item.converts), 0);
@@ -766,90 +828,249 @@ const getMonthlyProgressReport = asyncCatchRegular (async (req, res, _next) => {
 	const thisMonthMarriages = monthlyData.reduce((acc, item) => acc + Number(item.marriages), 0);
 	const prevMonthMarriages = prevMonthlyData.reduce((acc, item) => acc + Number(item.marriages), 0);
 
-	const thisMonthSundaySchool = monthlyData.find(item => (item.service_id === 2)) ? Number(monthlyData.find(item => (item.service_id === 2)).total_att) : 0;
-	const prevMonthSundaySchool = prevMonthlyData.find(item => (item.service_id === 2)) ? Number(prevMonthlyData.find(item => (item.service_id === 2)).total_att) : 0;
+	const data = [];
 
-	const thisMonthHouseFellowship = monthlyData.find(item => (item.service_id === 3)) ? Number(monthlyData.find(item => (item.service_id === 3)).total_att) : 0;
-	const prevMonthHouseFellowship = prevMonthlyData.find(item => (item.service_id === 3)) ? Number(prevMonthlyData.find(item => (item.service_id === 3)).total_att) : 0;
+	if (isEmpty(monthlyData) && isEmpty(prevMonthlyData)) {
+		data.push({
+			service_name: '',
+			service_id: '',
+			service_name_slug: '',
+			men: {
+				this_month_total: 0,
+				prev_month_total: 0,
+				difference_total: 0,
+				percent_diff_total: 0,
+				this_month_avg: 0,
+				prev_month_avg: 0,
+				difference_avg: 0,
+				percent_diff_avg: 0
+			},
+			women: {
+				this_month_total: 0,
+				prev_month_total: 0,
+				difference_total: 0,
+				percent_diff_total: 0,
+				this_month_avg: 0,
+				prev_month_avg: 0,
+				difference_avg: 0,
+				percent_diff_avg: 0
+			},
+			children: {
+				this_month_total: 0,
+				prev_month_total: 0,
+				difference_total: 0,
+				percent_diff_total: 0,
+				this_month_avg: 0,
+				prev_month_avg: 0,
+				difference_avg: 0,
+				percent_diff_avg: 0
+			},
+			total_avg: {
+				this_month_value: 0,
+				prev_month_value: 0,
+				difference: 0,
+				percent_diff: 0
+			},
+			total_att: {
+				this_month_value: 0,
+				prev_month_value: 0,
+				difference: 0,
+				percent_diff: 0
+			}
+		});
+	}
 
-	const thisMonthDiggingDeep = monthlyData.find(item => (item.service_id === 4)) ? Number(monthlyData.find(item => (item.service_id === 4)).total_att) : 0;
-	const prevMonthDiggingDeep = prevMonthlyData.find(item => (item.service_id === 4)) ? Number(prevMonthlyData.find(item => (item.service_id === 4)).total_att) : 0;
+	monthlyData.forEach(item => {
+		prevMonthlyData.forEach(prevItem => {
+			if (item.service_id === prevItem.service_id) {
+				let serviceName = item.service_name.toLowerCase().split(' ').join('_');
+				data.push({
+					service_name: item.service_name,
+					service_id: item.service_id,
+					service_name_slug: serviceName,
+					men: {
+						this_month_total: item.men,
+						prev_month_total: prevItem.men,
+						difference_total: item.men - prevItem.men,
+						percent_diff_total: calculatePercentageDiff(prevItem.men, item.men),
+						this_month_avg: item.avg_men,
+						prev_month_avg: prevItem.avg_men,
+						difference_avg: item.avg_men - prevItem.avg_men,
+						percent_diff_avg: calculatePercentageDiff(prevItem.avg_men, item.avg_men)
+					},
+					women: {
+						this_month_total: item.women,
+						prev_month_total: prevItem.women,
+						difference_total: item.women - prevItem.women,
+						percent_diff_total: calculatePercentageDiff(prevItem.women, item.women),
+						this_month_avg: item.avg_women,
+						prev_month_avg: prevItem.avg_women,
+						difference_avg: item.avg_women - prevItem.avg_women,
+						percent_diff_avg: calculatePercentageDiff(prevItem.avg_women, item.avg_women)
+					},
+					children: {
+						this_month_total: item.children,
+						prev_month_total: prevItem.children,
+						difference_total: item.children - prevItem.children,
+						percent_diff_total: calculatePercentageDiff(prevItem.children, item.children),
+						this_month_avg: item.avg_children,
+						prev_month_avg: prevItem.avg_children,
+						difference_avg: item.avg_children - prevItem.avg_children,
+						percent_diff_avg: calculatePercentageDiff(prevItem.avg_children, item.avg_children)
+					},
+					total_avg: {
+						this_month_value: item.avg_total,
+						prev_month_value: prevItem.avg_total,
+						difference: item.avg_total - prevItem.avg_total,
+						percent_diff: calculatePercentageDiff(prevItem.avg_total, item.avg_total)
+					},
+					total_att: {
+						this_month_value: item.total_att,
+						prev_month_value: prevItem.total_att,
+						difference: item.total_att - prevItem.total_att,
+						percent_diff: calculatePercentageDiff(prevItem.total_att, item.total_att)
+					}
+				});
 
-	const thisMonthFaithClinic = monthlyData.find(item => (item.service_id === 5)) ? Number(monthlyData.find(item => (item.service_id === 5)).total_att) : 0;
-	const prevMonthFaithClinic = prevMonthlyData.find(item => (item.service_id === 5)) ? Number(prevMonthlyData.find(item => (item.service_id === 5)).total_att) : 0;
+				item.delete = true
+				prevItem.delete = true
+			}
+		});
+	})
+
+	monthlyData = monthlyData.filter(item => item.delete !== true)
+	prevMonthlyData = prevMonthlyData.filter(item => item.delete !== true)
+
+	monthlyData.forEach(item => {
+		let serviceName = item.service_name.toLowerCase().split(' ').join('_');
+		data.push({
+			service_name: item.service_name,
+			service_id: item.service_id,
+			service_name_slug: serviceName,
+			men: {
+				this_month_total: item.men,
+				prev_month_total: 0,
+				difference_total: item.men,
+				percent_diff_total: calculatePercentageDiff(0, item.men),
+				this_month_avg: item.avg_men,
+				prev_month_avg: 0,
+				difference_avg: item.avg_men,
+				percent_diff_avg: calculatePercentageDiff(0, item.avg_men)
+			},
+			women: {
+				this_month_total: item.women,
+				prev_month_total: 0,
+				difference_total: item.women,
+				percent_diff_total: calculatePercentageDiff(0, item.women),
+				this_month_avg: item.avg_women,
+				prev_month_avg: 0,
+				difference_avg: item.avg_women,
+				percent_diff_avg: calculatePercentageDiff(0, item.avg_women)
+			},
+			children: {
+				this_month_total: item.children,
+				prev_month_total: 0,
+				difference_total: item.children,
+				percent_diff_total: calculatePercentageDiff(0, item.children),
+				this_month_avg: item.avg_children,
+				prev_month_avg: 0,
+				difference_avg: item.avg_children,
+				percent_diff_avg: calculatePercentageDiff(0, item.avg_children)
+			},
+			total_avg: {
+				this_month_value: item.avg_total,
+				prev_month_value: 0,
+				difference: item.avg_total,
+				percent_diff: calculatePercentageDiff(0, item.avg_total)
+			},
+			total_att: {
+				this_month_value: item.total_att,
+				prev_month_value: 0,
+				difference: item.total_att,
+				percent_diff: calculatePercentageDiff(0, item.total_att)
+			}
+		});
+	});
+
+	prevMonthlyData.forEach(item => {
+		let serviceName = item.service_name.toLowerCase().split(' ').join('_');
+		data.push({
+			service_name: item.service_name,
+			service_id: item.service_id,
+			service_name_slug: serviceName,
+			men: {
+				this_month_total: 0,
+				prev_month_total: item.men,
+				difference_total: 0 - item.men,
+				percent_diff_total: calculatePercentageDiff(item.men, 0),
+				this_month_avg: 0,
+				prev_month_avg: item.avg_men,
+				difference_avg: 0 - item.avg_men,
+				percent_diff_avg: calculatePercentageDiff(item.avg_men, 0)
+			},
+			women: {
+				this_month_total: 0,
+				prev_month_total: item.women,
+				difference_total: 0 - item.women,
+				percent_diff_total: calculatePercentageDiff(item.women, 0),
+				this_month_avg: 0,
+				prev_month_avg: item.avg_women,
+				difference_avg: 0 - item.avg_women,
+				percent_diff_avg: calculatePercentageDiff(item.avg_women, 0)
+			},
+			children: {
+				this_month_total: 0,
+				prev_month_total: item.children,
+				difference_total: 0 - item.children,
+				percent_diff_total: calculatePercentageDiff(item.children, 0),
+				this_month_avg: 0,
+				prev_month_avg: item.avg_children,
+				difference_avg: 0 - item.avg_children,
+				percent_diff_avg: calculatePercentageDiff(item.avg_children, 0)
+			},
+			total_avg: {
+				this_month_value: 0,
+				prev_month_value: item.avg_total,
+				difference: 0 - item.avg_total,
+				percent_diff: calculatePercentageDiff(item.avg_total, 0)
+			},
+			total_att: {
+				this_month_value: 0,
+				prev_month_value: item.total_att,
+				difference: 0 - item.total_att,
+				percent_diff: calculatePercentageDiff(item.total_att, 0)
+			}
+		});
+	});
 
 	const combinedData = {
-		average_attendance: {
-			this_month: thisMonthAvg,
-			prev_month: prevMonthAvg,
-			difference: thisMonthAvg - prevMonthAvg,
-			percent_diff: ((thisMonthAvg - prevMonthAvg) / prevMonthAvg) * 100
-		},
-		men: {
-			this_month: thisMonthMen,
-			prev_month: prevMonthMen,
-			difference: thisMonthMen - prevMonthMen,
-			percent_diff: ((thisMonthMen - prevMonthMen) / prevMonthMen) * 100
-		},
-		women: {
-			this_month: thisMonthWomen,
-			prev_month: prevMonthWomen,
-			difference: thisMonthWomen - prevMonthWomen,
-			percent_diff: ((thisMonthWomen - prevMonthWomen) / prevMonthWomen) * 100
-		},
-		children: {
-			this_month: thisMonthChildren,
-			prev_month: prevMonthChildren,
-			difference: thisMonthChildren - prevMonthChildren,
-			percent_diff: ((thisMonthChildren - prevMonthChildren) / prevMonthChildren) * 100
-		},
+		this_month: month + ' ' + year, 
+		prev_month: prevMonth + ' ' + year,
+		year,
+		servicesData: data,
 		converts: {
-			this_month: thisMonthConverts,
-			prev_month: prevMonthConverts,
+			this_month_value: thisMonthConverts,
+			prev_month_value: prevMonthConverts,
 			difference: thisMonthConverts - prevMonthConverts,
-			percent_diff: ((thisMonthConverts - prevMonthConverts) / prevMonthConverts) * 100
+			percent_diff: calculatePercentageDiff(prevMonthConverts, thisMonthConverts)
 		},
 		births: {
-			this_month: thisMonthBirths,
-			prev_month: prevMonthBirths,
+			this_month_value: thisMonthBirths,
+			prev_month_value: prevMonthBirths,
 			difference: thisMonthBirths - prevMonthBirths,
-			percent_diff: ((thisMonthBirths - prevMonthBirths) / prevMonthBirths) * 100
+			percent_diff: calculatePercentageDiff(prevMonthBirths, thisMonthBirths)
 		},
 		demises: {
-			this_month: thisMonthDemises,
-			prev_month: prevMonthDemises,
+			this_month_value: thisMonthDemises,
+			prev_month_value: prevMonthDemises,
 			difference: thisMonthDemises - prevMonthDemises,
-			percent_diff: ((thisMonthDemises - prevMonthDemises) / prevMonthDemises) * 100
+			percent_diff: calculatePercentageDiff(prevMonthDemises, thisMonthDemises)
 		},
 		marriages: {
-			this_month: thisMonthMarriages,
-			prev_month: prevMonthMarriages,
+			this_month_value: thisMonthMarriages,
+			prev_month_value: prevMonthMarriages,
 			difference: thisMonthMarriages - prevMonthMarriages,
-			percent_diff: ((thisMonthMarriages - prevMonthMarriages) / prevMonthMarriages) * 100
-		},
-		sunday_school: {
-			this_month: thisMonthSundaySchool,
-			prev_month: prevMonthSundaySchool,
-			difference: thisMonthSundaySchool - prevMonthSundaySchool,
-			percent_diff: ((thisMonthSundaySchool - prevMonthSundaySchool) / prevMonthSundaySchool) * 100
-		},
-		house_fellowship: {
-			this_month: thisMonthHouseFellowship,
-			prev_month: prevMonthHouseFellowship,
-			difference: thisMonthHouseFellowship - prevMonthHouseFellowship,
-			percent_diff: ((thisMonthHouseFellowship - prevMonthHouseFellowship) / prevMonthHouseFellowship) * 100
-		},
-		digging_deep: {
-			this_month: thisMonthDiggingDeep,
-			prev_month: prevMonthDiggingDeep,
-			difference: thisMonthDiggingDeep - prevMonthDiggingDeep,
-			percent_diff: ((thisMonthDiggingDeep - prevMonthDiggingDeep) / prevMonthDiggingDeep) * 100
-		},
-		faith_clinic: {
-			this_month: thisMonthFaithClinic,
-			prev_month: prevMonthFaithClinic,
-			difference: thisMonthFaithClinic - prevMonthFaithClinic,
-			percent_diff: ((thisMonthFaithClinic - prevMonthFaithClinic) / prevMonthFaithClinic) * 100
+			percent_diff: calculatePercentageDiff(prevMonthMarriages, thisMonthMarriages)
 		}
 	}
 
@@ -858,6 +1079,50 @@ const getMonthlyProgressReport = asyncCatchRegular (async (req, res, _next) => {
 		progressData: combinedData
 	});
 });
+
+const getQuarterlyReport = asyncCatchRegular(async (req, res, _next) => {
+	let months = [
+		'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 
+		'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'
+	]
+
+	let start_month = req.query.start_month;
+	let end_month = req.query.end_month;
+	let start_year = req.query.start_year;
+	let end_year = req.query.end_year;
+
+	let quarters = {};
+
+	for(let i = 0; i < (end_year - start_year); i++) {
+		quarters[startDateYear + i] = {
+			q1: [],
+			q2: [],
+			q3: [],
+			q4: []
+		}
+	}
+
+	
+
+	let Q1 = ['Sep', 'Oct', 'Nov'];
+	let Q2 = ['Dec', 'Jan', 'Feb'];
+	let Q3 = ['Mar', 'Apr', 'May'];
+	let Q4 = ['Jun', 'Jul', 'Aug'];
+
+	function findQuarter(month) {
+		if (Q1.find(month) >= 0) return 'Q1';
+		if (Q2.find(month) >= 0) return 'Q2';
+		if (Q3.find(month) >= 0) return 'Q3';
+		if (Q4.find(month) >= 0) return 'Q4';
+	}
+
+	for(let i = 0; i < (endDateMonth - startDateMonth); i++) {
+		let monthKey = months.find(startDateMonth + i);
+		let month = months[monthKey];
+
+		monthQuarter = findQuarter(month);
+	}
+})
 
 export { 
 	getAttendance,

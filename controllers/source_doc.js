@@ -67,7 +67,7 @@ const fileUpload = asyncCatchInsert(async (req, res, _next) => {
 		const result = await updateDb(db('source_docs'), imageData, { id: found_docs[0].id });
 
 		if (result) {
-			return res.status(200).json({
+			return res.status(201).json({
 				status: 'success',
 				message: 'File updated successfully',
 				data: result
@@ -82,7 +82,7 @@ const fileUpload = asyncCatchInsert(async (req, res, _next) => {
 		const result = await insertIntoDb(db('source_docs'), imageData);
 
 		if (result) {
-			return res.status(200).json({ 
+			return res.status(201).json({ 
 				status: "success",
 				message: "File uploaded successfully",
 				data: result

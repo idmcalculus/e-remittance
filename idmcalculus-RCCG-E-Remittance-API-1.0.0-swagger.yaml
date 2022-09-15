@@ -228,7 +228,7 @@ components:
       example: 'Education'
     sub_cat_name:
       type: string
-      example: 'School building'
+      example: '\'
     created_at:
       type: string
       format: date-time

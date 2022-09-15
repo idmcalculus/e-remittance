@@ -79,11 +79,27 @@ const createCsrReport = asyncCatchInsert(async (req, res, _next) => {
 	if (foundMonthlyReport) {
 		// if report data for this month exists, update
 		const updateMonthlyReportData = await updateDb(db('monthly_csr_reports'), csrMonthlyData, { id: foundMonthlyReport[0].id });
-		await insertOpsHelper(insertIntoDb, updateMonthlyReportData, db('csr_reports'), data, res);
+
+		if (updateMonthlyReportData) {
+			await insertOpsHelper(insertIntoDb, db('csr_reports'), data, res);
+		} else {
+			return res.status(400).json({
+				status: 'error',
+				message: 'Error updating monthly data.'
+			});
+		}
 	} else {
 		// if csr Report for this month does not exist, create
 		const insertMonthlyReportData = await insertIntoDb(db('monthly_csr_reports'), csrMonthlyData);
-		await insertOpsHelper(insertIntoDb, insertMonthlyReportData, db('csr_reports'), data, res);
+
+		if (insertMonthlyReportData) {
+			await insertOpsHelper(insertIntoDb, db('csr_reports'), data, res);
+		} else {
+			return res.status(400).json({
+				status: 'error',
+				message: 'Error inserting monthly data.'
+			});
+		}
 	}
 })
 
@@ -109,11 +125,27 @@ const updateCsrReport = async (req, res, _next) => {
 		if (foundMonthlyReport) {
 			// if report for this month exists, update
 			const updateMonthlyReportData = await updateDb(db('monthly_csr_reports'), csrMonthlyData, { id: foundMonthlyReport[0].id });
-			await updateOpsHelper(updateDb, updateMonthlyReportData, db('csr_reports'), data, { id: foundCsrReport[0].id }, res);
+
+			if (updateMonthlyReportData) {
+				await updateOpsHelper(updateDb, db('csr_reports'), data, { id: foundCsrReport[0].id }, res);
+			} else {
+				return res.status(400).json({
+					status: 'error',
+					message: 'Error updating monthly data.'
+				});
+			}
 		} else {
 			// if report for this month does not exist, create
 			const insertMonthlyReportData = insertIntoDb(db('monthly_csr_reports'), csrMonthlyData);
-			await updateOpsHelper(updateDb, insertMonthlyReportData, db('csr_reports'), data, { id: foundCsrReport[0].id }, res);
+
+			if (insertMonthlyReportData) {
+				await updateOpsHelper(updateDb, db('csr_reports'), data, { id: foundCsrReport[0].id }, res);
+			} else {
+				return res.status(400).json({
+					status: 'error',
+					message: 'Error inserting monthly data.'
+				});
+			}
 		}
 	} else {
 		return res.status(404).json({

@@ -1,4 +1,5 @@
 import { config } from "dotenv";
+import	isArray from "lodash/isArray.js";
 import isEmpty from "lodash/isEmpty.js";
 import { DateTime, Settings } from "luxon";
 import db from "../services/db.js";
@@ -9,12 +10,22 @@ config();
 Settings.defaultZone = process.env.TIMEZONE;
 
 const locked = async (req, res, next, comm_date, comp_date, ops) => {
-	const { parish_code, area_code, zone_code, prov_code, reg_code, sub_cont_code, cont_code, month, year } = req.body;
+
+	let data;
+
+	if (isArray(req.body)) {
+		data = req.body[0];
+	} else {
+		data = req.body;
+	}
+	
+	const { parish_code, area_code, zone_code, prov_code, reg_code, sub_cont_code, cont_code, month, year } = data;
 
 	const queryData = {
 		rem_month: month, 
 		rem_year: year
 	}
+
 	const currDate = DateTime.now().toFormat('yyyy-MM-dd');
 
 	let unlockTypeCodes = [ parish_code, area_code, zone_code, prov_code ];

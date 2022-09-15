@@ -49,26 +49,19 @@ const officeTypes = {
  * @param {*} res 
  * @returns 
  */
-const insertOpsHelper = async (dbInsertFn, monthlyData, db, data, res) => {
-	if (monthlyData) {
-		const insertData = await dbInsertFn(db, data);
+const insertOpsHelper = async (dbInsertFn, db, data, res) => {
+	const insertData = await dbInsertFn(db, data);
 
-		if (insertData) {
-			return res.status(201).json({
-				status: 'success',
-				message: 'data inserted successfully',
-				data: insertData
-			});
-		} else {
-			return res.status(400).json({
-				status: 'error',
-				message: 'Error inserting data.'
-			});
-		}
+	if (insertData) {
+		return res.status(201).json({
+			status: 'success',
+			message: 'data inserted successfully',
+			data: insertData
+		});
 	} else {
 		return res.status(400).json({
 			status: 'error',
-			message: 'Error inserting monthly data.'
+			message: 'Error inserting data.'
 		});
 	}
 }
@@ -83,26 +76,19 @@ const insertOpsHelper = async (dbInsertFn, monthlyData, db, data, res) => {
  * @param {*} res 
  * @returns json response
  */
-const updateOpsHelper = async (dbUpdateFn, monthlyData, db, data, queryData, res) => {
-	if (monthlyData) {
-		const updateData = await dbUpdateFn(db, data, queryData);
+const updateOpsHelper = async (dbUpdateFn, db, data, queryData, res) => {
+	const updateData = await dbUpdateFn(db, data, queryData);
 
-		if (updateData) {
-			return res.status(201).json({
-				status: 'success',
-				message: 'data updated successfully',
-				data: updateData
-			});
-		} else {
-			return res.status(400).json({
-				status: 'error',
-				message: 'Error updating data.'
-			});
-		}
+	if (updateData) {
+		return res.status(201).json({
+			status: 'success',
+			message: 'data updated successfully',
+			data: updateData
+		});
 	} else {
 		return res.status(400).json({
 			status: 'error',
-			message: 'Error updating monthly data.'
+			message: 'Error updating data.'
 		});
 	}
 }
@@ -135,11 +121,29 @@ const asyncCatchInsert = (fn) => async (req, res, next) => {
 	}
 }
 
+const batchUpdate = async (db, table, queryData, collection) => {
+	const trx = await db.transaction(); 
+	try {
+	  await Promise.all(collection.map(tuple => 
+		db(table)
+		  .where(queryData)
+		  .update(tuple)
+		  .transacting(trx)
+		  .returning('*')
+		)
+	  );
+	  await trx.commit();
+	} catch (error) {
+	  await trx.rollback();
+	}
+}
+
 export { 
 	formatBytes,
 	officeTypes,
 	insertOpsHelper,
 	updateOpsHelper,
 	asyncCatchRegular,
-	asyncCatchInsert
+	asyncCatchInsert,
+	batchUpdate
 };

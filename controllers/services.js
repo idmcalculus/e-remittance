@@ -1,6 +1,7 @@
 import isEmpty from 'lodash/isEmpty.js';
+import isArray from 'lodash/isArray.js';
 import db from '../services/db.js';
-import { getDataFromDb, insertIntoDb } from '../utils/dbOps.js';
+import { getDataFromDb } from '../utils/dbOps.js';
 import { asyncCatchInsert, asyncCatchRegular } from '../utils/helpers.js';
 
 const getServices = asyncCatchRegular(async (req, res, _next) => {
@@ -21,39 +22,32 @@ const getServices = asyncCatchRegular(async (req, res, _next) => {
 
 const createServices = asyncCatchInsert(async (req, res, _next) => {
 	const data = req.body;
-	/* console.log(data[0].service_name)
-	const service_name = data[0].service_name;
 
-	const foundServiceData = await getDataFromDb(req, db('services'), { service_name });
-
-	if (foundServiceData) {
-		const updateServicesData = await updateDb(db('services'), data, { service_name });
-
-		if (updateServicesData) {
-			return res.status(200).json({
-				status: 'success',
-				data: updateServicesData
-			});
-		} else {
-			return res.status(400).json({
-				status: 'fail',
-				message: 'Services update unsuccessful'
-			})
+	if (isArray(data)) {
+		for (const elem of data) {
+			elem['service_name_slug'] = elem['service_name'].toLowerCase().split(' ').join('_');
 		}
-	} else { */
-		const createServiceData = await insertIntoDb(db('services'), data)
-		if (createServiceData) {
-			return res.status(200).json({
-				status: 'success',
-				data: createServiceData
-			});
-		} else {
-			return res.status(400).json({
-				status: 'fail',
-				message: 'Insert data into services unsuccessful'
-			})
-		}
-	//}
+	} else {
+		data['service_name_slug'] = data['service_name'].toLowerCase().split(' ').join('_');
+	}
+
+	const insertedServicesData = await db('services')
+									.insert(data)
+									.onConflict(['service_name', 'service_name_slug'])
+									.merge()
+									.returning('*');
+
+	if (insertedServicesData) {
+		return res.status(200).json({
+			status: 'success',
+			data: insertedServicesData
+		});
+	} else {
+		return res.status(400).json({
+			status: 'fail',
+			message: 'Inserting/updating services data unsuccessful'
+		})
+	}
 });
 
 const deleteServices = asyncCatchRegular(async (req, res, _next) => {
@@ -88,7 +82,7 @@ const getParishServices = asyncCatchRegular (async (req, res, _next) => {
 	const parishServices = await db('reports_att')
 								.where('parish_code', parish_code)
 								.join('services', 'reports_att.service_id', 'services.id')
-								.select('reports_att.service_id', 'services.service_name');
+								.select('reports_att.service_id', 'services.service_name', 'services.service_name_slug');
 
 	if (!isEmpty(parishServices)) {
 		return res.status(200).json({

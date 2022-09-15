@@ -113,7 +113,16 @@ const getSettings = asyncCatchRegular(async (req, res, next) => {
 });
 
 const locked = async (req, res, _next, comm_date, comp_date, ops) => {
-	const { parish_code, area_code, zone_code, prov_code, reg_code, sub_cont_code, cont_code, rem_month, rem_year } = req.query;
+
+	let data;
+
+	if (isArray(req.query)) {
+		data = req.query[0];
+	} else {
+		data = req.query;
+	}
+
+	const { parish_code, area_code, zone_code, prov_code, reg_code, sub_cont_code, cont_code, rem_month, rem_year } = data;
 
 	const currDate = DateTime.now().toFormat('yyyy-MM-dd');
 
