@@ -34,41 +34,83 @@ GET http://localhost:3100/attendance/?service_date=2022-03-02
 POST http://localhost:3100/attendance
 Content-Type: application/json
 
-{
-  "service_id": 1,
-  "parish_code": "715701",
-  "area_code": "AR300000000",
-  "zone_code": "ZN300000000",
-  "province_code": "AB34",
-  "region_code": "R01",
-  "service_date": "2016-08-29",
-  "week": "Week 1",
-  "month": "May",
-  "year": 2022,
-  "men": 170,
-  "women": 270,
-  "children": 310
-}
+[
+	{
+		"service_id": 1,
+		"parish_code": "711172",
+		"area_code": "AR23300011",
+		"zone_code": "ZN300000000",
+		"prov_code": "AB34",
+		"reg_code": "R01",
+		"sub_cont_code": "SC01",
+		"cont_code": "C01",
+		"service_date": "2022-09-03",
+		"week": "Week 1",
+		"month": "Sep",
+		"year": 2022,
+		"men": 160,
+		"women": 260,
+		"children": 360
+	},
+	{
+		"service_id": 1,
+		"parish_code": "711172",
+		"area_code": "AR23300011",
+		"zone_code": "ZN300000000",
+		"prov_code": "AB34",
+		"reg_code": "R01",
+		"sub_cont_code": "SC01",
+		"cont_code": "C01",
+		"service_date": "2022-09-10",
+		"week": "Week 2",
+		"month": "Sep",
+		"year": 2022,
+		"men": 180,
+		"women": 280,
+		"children": 380
+	},
+	{
+		"service_id": 1,
+		"parish_code": "711172",
+		"area_code": "AR23300011",
+		"zone_code": "ZN300000000",
+		"prov_code": "AB34",
+		"reg_code": "R01",
+		"sub_cont_code": "SC01",
+		"cont_code": "C01",
+		"service_date": "2022-09-17",
+		"week": "Week 3",
+		"month": "Sep",
+		"year": 2022,
+		"men": 190,
+		"women": 290,
+		"children": 390
+	}
+]
 
 ###
 POST https://e-remittance.herokuapp.com/attendance
 Content-Type: application/json
 
-{
-	"service_id": 1,
-	"parish_code": "715701",
-	"area_code": "AR300000000",
-	"zone_code": "ZN300000000",
-	"province_code": "AB34",
-	"region_code": "R01",
-	"service_date": "2022-03-01",
-	"week": "Week 3",
-	"month": "March",
-	"year": 2022,
-	"men": 20,
-	"women": 25,
-	"children": 41
-}
+[
+	{
+		"service_id": 1,
+		"parish_code": "711172",
+		"area_code": "AR23300011",
+		"zone_code": "ZN300000000",
+		"prov_code": "AB34",
+		"reg_code": "R01",
+		"sub_cont_code": "SC01",
+		"cont_code": "C01",
+		"service_date": "2022-09-15",
+		"week": "Week 3",
+		"month": "Sep",
+		"year": 2022,
+		"men": 190,
+		"women": 290,
+		"children": 390
+	}
+]
 
 ###
 DELETE http://localhost:3100/attendance/?service_id=1&week=Week 1&month=March&year=2022
@@ -82,73 +124,35 @@ GET http://localhost:3100/csr_reports/?id=1
 POST http://localhost:3100/csr_reports
 Content-Type: application/json
 
-[
-	{
-		"parish_code": "715701",
-		"area_code": "AR23300011",
-		"month": "January",
-		"year": 2022,
-		"description": "None",
-		"address": "Ibadan",
-		"state": "111",
-		"country": "NG",
-		"csr_offering": 50000.00,
-		"category_id": 5,
-		"sub_category_id": 11,
-		"date_of_activity": "02/01/2022",
-		"beneficiary": "4000",
-		"souls": "500",
-		"testimonies": "None",
-		"challenges": "None",
-		"recommendations": "None",
-		"comment": "None",
-		"expenditure": 40000.00
-	},
-	{
-		"parish_code": "715701",
-		"area_code": "AR23300011",
-		"month": "January",
-		"year": 2021,
-		"description": "none",
-		"quantity": 1,
-		"address": "camp",
-		"lga": "Obafemi/owode",
-		"state": "25",
-		"country": "NG",
-		"csr_offering": 35000.00,
-		"category_id": 5,
-		"sub_category_id": 15,
-		"date_of_activity": "03/13/2021",
-		"beneficiary": "34",
-		"souls": "23",
-		"testimonies": "none",
-		"challenges": "none",
-		"recommendations": "none",
-		"comment": "none",
-		"expenditure": 23000.00,
-		"posted_by": "John Doe",
-		"posted_by_name": "John Doe"
-	},
-	{
-		"parish_code": "715701",
-		"month": "March",
-		"year": 2021,
-		"description": "Building",
-		"quantity": 2,
-		"lga": "Numna",
-		"state": "2",
-		"country": "NG",
-		"csr_offering": 10000.00,
-		"category_id": 3,
-		"sub_category_id": 31,
-		"date_of_activity": "06/12/2021",
-		"beneficiary": "500",
-		"souls": "10",
-		"expenditure": 700000.00,
-		"posted_by": "John Doe",
-		"posted_by_name": "John Doe"
-	}
-]
+{
+	"parish_code": "715701",
+    "area_code": "AR233000110",
+    "zone_code": "ZN300000000",
+    "prov_code": "AB34",
+    "reg_code": "R01",
+    "sub_cont_code": "SC01",
+    "cont_code": "C01",
+    "week": "Week 2",
+    "month": "Sep",
+    "year": 2022,
+    "date_of_activity": "2022-09-10",
+    "project": "School Feeding",
+    "description": "Feed pupils in a school",
+    "address": "Lagos",
+    "lga": "Ikeja",
+    "state": "Lagos",
+    "country": "NG",
+    "csr_offering": 10000.00,
+    "category_id": 7,
+    "sub_category_id": 1,
+    "beneficiaries": 150,
+    "souls": 10,
+    "testimonies": "None",
+    "challenges": "None",
+    "recommendations": "None",
+    "comment": "None",
+    "expenditure": 85000.00
+}
 
 ###
 POST https://e-remittance.herokuapp.com/csr_reports
@@ -271,6 +275,89 @@ Content-Type: application/json
 	"service_name": "Thursday Service"
 	}
 ]
+
+###
+POST http://localhost:3100/permissions
+Content-Type: application/json
+
+[
+	{
+	"permission_name": "Attendance",
+	"permission_description": "Allows access to all Attendance entities and properties"
+	},
+	{
+	"permission_name": "Admin Settings",
+	"permission_description": "Allows access to all Admin Settings entities and properties"
+	},
+	{
+	"permission_name": "CSR Reports",
+	"permission_description": "Allows access to all CSR Reports entities and properties"
+	},
+	{
+	"permission_name": "Services",
+	"permission_description": "Allows access to all Services entities and properties"
+	},
+	{
+	"permission_name": "Special Unlock",
+	"permission_description": "Allows access to all Special Unlock entities and properties"
+	},
+	{
+	"permission_name": "Create Attendance",
+	"permission_description": "Can only create attendance report"
+	},
+	{
+	"permission_name": "Edit Attendance",
+	"permission_description": "Can only edit attendance report"
+	},
+	{
+	"permission_name": "Read Attendance",
+	"permission_description": "Can only read attendance report"
+	},
+	{
+	"permission_name": "Delete Attendance",
+	"permission_description": "Can only delete attendance report"
+	}
+]
+
+###
+POST http://localhost:3100/roles
+Content-Type: application/json
+
+[
+	{
+		"role_name": "pic-parish"
+	},
+	{
+		"role_name": "rpms-admin"
+	},
+	{
+		"role_name": "pic-area"
+	},
+	{
+		"role_name": "pic-zone"
+	},
+	{
+		"role_name": "picp"
+	},
+	{
+		"role_name": "picr"
+	},
+	{
+		"role_name": "sco"
+	},
+	{
+		"role_name": "co"
+	}
+]
+
+###
+POST http://localhost:3100/rolePermissions
+Content-Type: application/json
+
+{
+	"role_id": 1,
+	"permission_id": "1,2,3,4,5"
+}
 
 ###
 GET http://localhost:3100/csr_categories
@@ -855,108 +942,3 @@ Content-Type: application/json
 		"category_id": "8"
 	}
 ]
-
-###
-GET http://localhost:3100/directories/regions
-
-###
-GET http://localhost:3100/directories/regions/1
-
-###
-POST http://localhost:3100/directories/regions
-Content-Type: application/json
-
-{
-	"region": "Region 1",
-	"alias": "R1",
-	"region_code": "RCCGR1254000013",
-	"address": "RCCG TOD, Abuja",
-	"city": "Kubwa",
-	"country": "Nigeria",
-	"phone_no": "08031234567",
-	"email": "region1@rccg.com"
-}
-
-###
-GET http://localhost:3100/directories/provinces
-
-###
-GET http://localhost:3100/directories/provinces/1
-
-###
-POST http://localhost:3100/directories/provinces
-Content-Type: application/json
-
-{
-	"province": "Abuja Province 1",
-	"alias": "AP1",
-	"province_code": "RCCGP1254000013",
-	"address": "RCCG TOD, Abuja",
-	"city": "Kubwa",
-	"country": "Nigeria",
-	"phone_no": "08031234567",
-	"email": "abujaprovince1@rccg.com"
-}
-
-###
-GET http://localhost:3100/directories/zones
-
-###
-GET http://localhost:3100/directories/zones/1
-
-###
-POST http://localhost:3100/directories/zones
-Content-Type: application/json
-
-{
-	"zone": "Jesus House Zone",
-	"alias": "Zone 1",
-	"zone_code": "RCCGZ1254000013",
-	"address": "RCCG TOD, Abuja",
-	"city": "Kubwa",
-	"country": "Nigeria",
-	"phone_no": "08031234567",
-	"email": "abujaprovince1@rccg.com"
-}
-
-###
-GET http://localhost:3100/directories/areas
-
-###
-GET http://localhost:3100/directories/areas/1
-
-###
-POST http://localhost:3100/directories/areas
-Content-Type: application/json
-
-{
-	"area": "Abuja Province 1",
-	"alias": "AP1",
-	"province_code": "RCCGP1254000013",
-	"address": "RCCG TOD, Abuja",
-	"city": "Kubwa",
-	"country": "Nigeria",
-	"phone_no": "08031234567",
-	"email": "abujaprovince1@rccg.com"
-}
-
-###
-GET http://localhost:3100/directories/parishes
-
-###
-GET http://localhost:3100/directories/parishes/1
-
-###
-POST http://localhost:3100/directories/parishes
-Content-Type: application/json
-
-{
-	"parish_name": "RCCG Throne of David",
-	"alias": "RCCGTOD",
-	"parish_code": "RCCGP1254000017",
-	"address": "RCCG TOD, Abuja",
-	"city": "Kubwa",
-	"country": "Nigeria",
-	"phone_no": "08031234567",
-	"email": "abujaprovince1@rccg.com"
-}
